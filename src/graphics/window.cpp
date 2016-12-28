@@ -1,7 +1,8 @@
+#include "window.hpp"
 #include <SDL.h>
 #include <GL/glew.h>
 #include <stdexcept>
-#include "window.hpp"
+#include <cassert>
 
 namespace graphics {
 
@@ -9,10 +10,12 @@ namespace graphics {
 	SDL_GLContext g_glcontext = nullptr;
 
 
-	void open_window(	unsigned window_width, 
-						unsigned window_height, 
-						const char* window_title) 
+	void create_graphics(	unsigned window_width, 
+							unsigned window_height, 
+							const char* window_title) 
 	{ 
+		assert(g_window == nullptr);
+
 		g_window = ::SDL_CreateWindow(	window_title,
 										SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 										window_width, window_height,
@@ -28,7 +31,23 @@ namespace graphics {
 		{
 			throw std::runtime_error("Failed to create OpenGL context.");
 		}
+
+		GLenum error = ::glewInit();
+		if (error != GLEW_OK)
+		{
+			throw std::runtime_error("glewInit failed.");
+		} 
 	}
+
+
+	void cleanup_graphics() 
+	{ 
+		if (g_window) 
+		{
+			::SDL_DestroyWindow(g_window);
+		}
+	}
+
 
 	void clear_buffers()
 	{
@@ -36,10 +55,21 @@ namespace graphics {
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	}
 
-	bool run_window() 
-	{ 
-		clear_buffers();
 
+	void begin_render()
+	{
+		clear_buffers();
+	}
+
+
+	void end_render()
+	{
+		::SDL_GL_SwapWindow(g_window);
+	}
+
+
+	bool handle_events() 
+	{ 
 		::SDL_Event e;
 		while (::SDL_PollEvent(&e)) 
 		{ 
@@ -52,20 +82,9 @@ namespace graphics {
 				case SDL_QUIT:
 					return false;
 			}
-		}
-
-		::SDL_GL_SwapWindow(g_window);
+		} 
 
 		return true; 
-	}
-
-
-	void close_window() 
-	{ 
-		if (g_window) 
-		{
-			::SDL_DestroyWindow(g_window);
-		}
-	}
+	} 
 
 }

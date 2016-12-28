@@ -1,10 +1,17 @@
 #pragma once
 
-namespace graphics {
+namespace graphics 
+{
 
-	// Window
-	void open_window(unsigned window_width, unsigned window_height, const char* window_title); 
-	void close_window();
-	bool run_window(); 
+	void create_graphics(	unsigned window_width, 
+				unsigned window_height, 
+				const char* window_title); 
+
+	void cleanup_graphics();
+
+	void begin_render();
+	void end_render();
+
+	bool handle_events();
 
 }

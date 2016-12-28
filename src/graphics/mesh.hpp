@@ -1,10 +1,18 @@
 #pragma once
+#include <glm/mat4x4.hpp>
+#include <GL/glew.h>
 
 namespace graphics {
 namespace mesh { 
 
 		struct vertex
 		{
+			vertex(const glm::vec3& pos, const glm::vec3& norm, const glm::vec3& col)
+				: position(pos)
+				, normal(norm)
+				, color(col)
+			{ }
+
 			glm::vec3 position;
 			glm::vec3 normal;
 			glm::vec3 color;
@@ -13,6 +21,9 @@ namespace mesh {
 
 		static_assert(sizeof(glm::vec3) == sizeof(float)*3, "glm::vec3 should be 12 bytes");
 		static_assert(sizeof(vertex) == sizeof(glm::vec3)*3, "vertex structure should be packed");
+
+
+		const unsigned invalid_mesh_id = ~0;
 
 
 		unsigned alloc_triangle_strip(	const vertex* vertices, 
@@ -24,7 +35,8 @@ namespace mesh {
 											size_t index_count);
 
 		unsigned alloc_triangles(	const vertex* vertices, 
-									size_t vertex_count);
+									size_t vertex_count,
+									GLenum draw_mode = GL_TRIANGLES);
 
 		void free(unsigned);
 

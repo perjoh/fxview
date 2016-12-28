@@ -1,9 +1,7 @@
-#include <GL/glew.h>
-#include <vector>
-#include "check_opengl_error.hpp"
-#include <glm/mat4x4.hpp>
 #include "mesh.hpp"
+#include "check_opengl_error.hpp"
 #include "shader.hpp"
+#include <vector>
 
 namespace graphics {
 namespace mesh {
@@ -23,12 +21,12 @@ namespace mesh {
 	{
 		gl_Position = model_view_projection*vec4(position, 1.0f);
 
-		mat3 tmp = mat3(modelTransform);
+		mat3 tmp = mat3(model_view_projection);
 
-		vec3 normalTransformed = tmp*normal;
+		//vec3 normal_transformed = tmp*normal;
 
-		vec3 lightpos = vec3(25.0f, 50.0f, 0.0f);
-		float shade = dot(normalize(lightpos-position), normalTransformed);
+		//vec3 lightpos = vec3(25.0f, 50.0f, 0.0f);
+		float shade = 1.0f; // dot(normalize(lightpos-position), normal_transformed);
 
 		output_color = min(color+shade, vec3(1.0f, 1.0f, 1.0f));
 	} 
@@ -154,8 +152,12 @@ namespace mesh {
 			::glGenVertexArrays(1, &vertex_array_object_);
 			::glBindVertexArray(vertex_array_object_);
 
+			check_opengl_error(); 
+
 			// Vertex Buffer Object
 			::glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_object_); 
+
+			check_opengl_error(); 
 
 			// Element Buffer Object
 			if (element_buffer_object_ != 0)
@@ -176,11 +178,11 @@ namespace mesh {
 										reinterpret_cast<const GLvoid*>(offset)); 
 
 				offset += sizeof(glm::vec3);
+
+				check_opengl_error(); 
 			}
 
 			::glBindVertexArray(0); 
-
-			check_opengl_error(); 
 		} 
 
 
@@ -261,6 +263,7 @@ namespace mesh {
 
 		mesh_instance& get_mesh(unsigned i)
 		{
+			assert(i < allocated_meshes_.size());
 			return allocated_meshes_[i];
 		}
 
@@ -296,7 +299,7 @@ namespace mesh {
 
 	unsigned alloc_triangles(	const vertex* vertices,
 								size_t vertex_count,
-								GLenum draw_mode = GL_TRIANGLES)
+								GLenum draw_mode)
 	{
 		unsigned i = instance().allocate_mesh();
 		mesh_instance& m = instance().get_mesh(i);
@@ -305,12 +308,12 @@ namespace mesh {
 		{
 			m.setup_vertex_buffer_object(vertices, vertex_count);
 			m.setup_vertex_array_object();
-			m.set_draw_mode(GL_TRIANGLE_STRIP);
+			m.set_draw_mode(draw_mode);
 		}
 		catch (const std::exception&)
 		{
 			instance().free_mesh(i);
-			return 0;
+			return invalid_mesh_id;
 		}
 
 		return i; 
@@ -329,7 +332,7 @@ namespace mesh {
 										const GLuint* indices, 
 										size_t index_count)
 	{
-		return 0;
+		return invalid_mesh_id;
 	}
 
 
