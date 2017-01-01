@@ -13,16 +13,17 @@ void my_render()
 	if (mesh_id == graphics::mesh::invalid_mesh_id)
 	{
 		std::array<graphics::mesh::vertex, 3> vertices{
-			graphics::mesh::vertex{glm::vec3{-1.0f, 1.0f, -1.0f}, glm::vec3{0.0f, 0.0f, -1.0f}, glm::vec3{1.0f, 0, 0}}, 
-			graphics::mesh::vertex{glm::vec3{1.0f, 1.0f, -1.0f}, glm::vec3{0.0f, 0.0f, -1.0f}, glm::vec3{1.0f, 0, 0}}, 
-			graphics::mesh::vertex{glm::vec3{1.0f, -1.0f, -1.0f}, glm::vec3{0.0f, 0.0f, -1.0f}, glm::vec3{1.0f, 0, 0}}};
-
+			graphics::mesh::vertex{glm::vec3{-1.0f, -1.0f, 0.0f}, glm::vec3{0.0f, 0.0f, 1.0f}, glm::vec3{1.0f, 0, 0}}, 
+			graphics::mesh::vertex{glm::vec3{1.0f, -1.0f, 0.0f}, glm::vec3{0.0f, 0.0f, 1.0f}, glm::vec3{1.0f, 0, 0}}, 
+			graphics::mesh::vertex{glm::vec3{1.0f, 1.0f, 0.0f}, glm::vec3{0.0f, 0.0f, 1.0f}, glm::vec3{1.0f, 0, 0}}}; 
 
 		mesh_id = graphics::mesh::alloc_triangles(&vertices[0], 3);
 	}
 
 	graphics::mesh::set_projection_transform(glm::perspective(glm::radians(45.0f), 4.0f/3.0f, 0.1f, 100.0f));
-	graphics::mesh::set_view_transform(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)));
+
+	const glm::mat4 view = glm::lookAt(glm::vec3(0, 1, 10), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0)); 
+	graphics::mesh::set_view_transform(view);
 
 	graphics::mesh::draw(mesh_id, glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 }

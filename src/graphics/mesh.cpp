@@ -26,7 +26,7 @@ namespace mesh {
 		//vec3 normal_transformed = tmp*normal;
 
 		//vec3 lightpos = vec3(25.0f, 50.0f, 0.0f);
-		float shade = 1.0f; // dot(normalize(lightpos-position), normal_transformed);
+		float shade = 0.0f; // dot(normalize(lightpos-position), normal_transformed);
 
 		output_color = min(color+shade, vec3(1.0f, 1.0f, 1.0f));
 	} 
@@ -272,7 +272,7 @@ namespace mesh {
 							const glm::vec3& color)
 		{
 			shader_.bind();
-			mvp_uniform_.set(transform*view_transform_*projection_transform_);
+			mvp_uniform_.set(projection_transform_*view_transform_*transform);
 
 			get_mesh(mesh_id).draw();
 
@@ -304,17 +304,9 @@ namespace mesh {
 		unsigned i = instance().allocate_mesh();
 		mesh_instance& m = instance().get_mesh(i);
 
-		try
-		{
-			m.setup_vertex_buffer_object(vertices, vertex_count);
-			m.setup_vertex_array_object();
-			m.set_draw_mode(draw_mode);
-		}
-		catch (const std::exception&)
-		{
-			instance().free_mesh(i);
-			return invalid_mesh_id;
-		}
+		m.setup_vertex_buffer_object(vertices, vertex_count);
+		m.setup_vertex_array_object();
+		m.set_draw_mode(draw_mode);
 
 		return i; 
 	}
@@ -359,6 +351,7 @@ namespace mesh {
 				const glm::vec3& color)
 	{
 		instance().draw(mesh_id, transform, color);
+		check_opengl_error();
 	}
 
 }}
