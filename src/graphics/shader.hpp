@@ -20,7 +20,6 @@ namespace graphics
 
 	private :
 		GLuint handle_{0};
-		GLuint attached_program_{0};
 	};
 
 	template <typename T> class uniform;
@@ -45,7 +44,9 @@ namespace graphics
 		template <typename T>
 		uniform<T> get_uniform(const char* uniform_name) const 
 		{
-			return uniform<T>(::glGetUniformLocation(handle_, uniform_name));
+			const GLint location = ::glGetUniformLocation(handle_, uniform_name);
+			assert(location != -1);
+			return uniform<T>(location);
 		}
 
 	private :
@@ -77,6 +78,12 @@ namespace graphics
 	inline void uniform<float>::set(const float& value)
 	{
 		::glUniform1f(location_, value);
+	}
+
+	template <>
+	inline void uniform<glm::vec3>::set(const glm::vec3& value)
+	{
+		::glUniform3f(location_, value[0], value[1], value[2]); 
 	}
 
 	template <>

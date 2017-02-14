@@ -37,6 +37,11 @@ namespace graphics {
 		{
 			throw std::runtime_error("glewInit failed.");
 		} 
+
+		::glEnable(GL_DEPTH_TEST);
+		//::glEnable(GL_CULL_FACE);
+		//::glCullFace(GL_FRONT);
+		//::glCullFace(GL_BACK);
 	}
 
 
@@ -51,7 +56,7 @@ namespace graphics {
 
 	void clear_buffers()
 	{
-        glClearColor(0.0, 0.0, 0.0, 1.0f);
+        glClearColor(0.0, 1.0, 0.0, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	}
 

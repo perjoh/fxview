@@ -1,0 +1,11 @@
+Debug
+Win32
+fxview.dir
+CMakeFiles
+CMakeCache.txt
+*.vcxproj
+*.vcxproj.*
+.vs
+*.VC.*
+*.sln
+cmake_install.cmake

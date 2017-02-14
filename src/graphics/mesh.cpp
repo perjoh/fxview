@@ -9,36 +9,26 @@ namespace mesh {
 	const char* vertex_shader_src = R"shader(
 #version 330
 	layout(location=0) in vec3 position; 
-	layout(location=1) in vec3 normal;
-	layout(location=2) in vec3 color;
-
+	layout(location=1) in vec3 normal; 
+	layout(location=2) in vec3 color; 
 	uniform mat4 model_view_projection;
-	//uniform mat4 viewProjection;
-
-	out vec3 output_color;
+	uniform vec3 in_color;
+	out vec3 the_color;
 
 	void main() 
 	{
 		gl_Position = model_view_projection*vec4(position, 1.0f);
-
-		mat3 tmp = mat3(model_view_projection);
-
-		//vec3 normal_transformed = tmp*normal;
-
-		//vec3 lightpos = vec3(25.0f, 50.0f, 0.0f);
-		float shade = 0.0f; // dot(normalize(lightpos-position), normal_transformed);
-
-		output_color = min(color+shade, vec3(1.0f, 1.0f, 1.0f));
+		the_color = in_color*color;
 	} 
 	)shader";
 
 	const char* fragment_shader_src = R"shader(
 #version 330
-	in vec3 input_color;
+	in vec3 the_color;
 	out vec4 output_color; 
 
 	void main() {
-		output_color=vec4(input_color, 1.0f);
+		output_color=vec4(the_color, 1.0f);
 	} 
 	)shader";
 
@@ -165,7 +155,8 @@ namespace mesh {
 				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_object_);
 			}
 
-			for (unsigned index = 0, offset = 0; index < 3; ++index)
+			const unsigned NUM_ARRAYS = 3;
+			for (unsigned index = 0, offset = 0; index < NUM_ARRAYS; ++index)
 			{ 
 				::glEnableVertexAttribArray(index); 
 
@@ -206,6 +197,8 @@ namespace mesh {
 									0);
 			}
 
+			check_opengl_error();
+
 			::glBindVertexArray(0);
 		}
 
@@ -221,20 +214,21 @@ namespace mesh {
 	};
 
 
-	class instance 
+	class mesh_module 
 	{
 	private :
-		instance() 
+		mesh_module() 
 			: shader_{	shader(GL_VERTEX_SHADER, vertex_shader_src), 
 						shader(GL_FRAGMENT_SHADER, fragment_shader_src)}
 			, mvp_uniform_{shader_.get_uniform<glm::mat4x4>("model_view_projection")}
+			, color_{shader_.get_uniform<glm::vec3>("in_color")}
 		{ 
 		}
 
 	public :
-		static instance& get()
+		static mesh_module& get_instance()
 		{
-			static instance this_;
+			static mesh_module this_;
 			return this_;
 		}
 
@@ -246,7 +240,7 @@ namespace mesh {
 					return i;
 			}
 
-			allocated_meshes_.push_back(mesh_instance());
+			allocated_meshes_.emplace_back();
 			return allocated_meshes_.size() - 1;
 		}
 
@@ -273,6 +267,7 @@ namespace mesh {
 		{
 			shader_.bind();
 			mvp_uniform_.set(projection_transform_*view_transform_*transform);
+			color_.set(glm::vec3(1.0f, 0.0f, 0.0f));
 
 			get_mesh(mesh_id).draw();
 
@@ -284,25 +279,21 @@ namespace mesh {
 
 		shader_program shader_;
 		uniform<glm::mat4x4> mvp_uniform_; 
+		uniform<glm::vec3> color_;
 
 		glm::mat4x4 projection_transform_;
 		glm::mat4x4 view_transform_;
 	};
 
-	inline instance& instance() { return instance::get(); }
+	inline mesh_module& module_instance() { return mesh_module::get_instance(); }
 
 
-
-
-
-
-
-	unsigned alloc_triangles(	const vertex* vertices,
-								size_t vertex_count,
-								GLenum draw_mode)
+ unsigned alloc_triangles(	const vertex* vertices,
+							size_t vertex_count,
+							GLenum draw_mode)
 	{
-		unsigned i = instance().allocate_mesh();
-		mesh_instance& m = instance().get_mesh(i);
+		unsigned i = module_instance().allocate_mesh();
+		mesh_instance& m = module_instance().get_mesh(i);
 
 		m.setup_vertex_buffer_object(vertices, vertex_count);
 		m.setup_vertex_array_object();
@@ -324,25 +315,33 @@ namespace mesh {
 										const GLuint* indices, 
 										size_t index_count)
 	{
-		return invalid_mesh_id;
+		unsigned i = module_instance().allocate_mesh();
+		mesh_instance& m = module_instance().get_mesh(i);
+
+		m.setup_vertex_buffer_object(vertices, vertex_count);
+		m.setup_element_buffer_object(indices, index_count);
+		m.setup_vertex_array_object();
+		//m.set_draw_mode(draw_mode);
+
+		return i; 
 	}
 
 
 	void free(unsigned mesh_id)
 	{
-		instance().free_mesh(mesh_id);
+		module_instance().free_mesh(mesh_id);
 	} 
 
 
 	void set_projection_transform(const glm::mat4x4& proj_transform)
 	{
-		instance().projection_transform_ = proj_transform;
+		module_instance().projection_transform_ = proj_transform;
 	}
 
 
 	void set_view_transform(const glm::mat4x4& view_transform)
 	{
-		instance().view_transform_ = view_transform;
+		module_instance().view_transform_ = view_transform;
 	}
 
 
@@ -350,7 +349,7 @@ namespace mesh {
 				const glm::mat4& transform, 
 				const glm::vec3& color)
 	{
-		instance().draw(mesh_id, transform, color);
+		module_instance().draw(mesh_id, transform, color);
 		check_opengl_error();
 	}
 

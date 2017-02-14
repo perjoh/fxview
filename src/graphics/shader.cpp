@@ -10,7 +10,8 @@
 namespace graphics
 {
 	
-	GLuint create_shader_from_source(GLenum shader_type, const char* source) 
+	GLuint create_shader_from_source(	GLenum shader_type, 
+										const char* source) 
 	{ 
 		// Compile source code
 		GLuint shader = glCreateShader(shader_type);
@@ -34,8 +35,10 @@ namespace graphics
 	}
 
 
-	shader::shader(GLenum shader_type, const char* shader_source)
-		: handle_{create_shader_from_source(shader_type, shader_source)}
+	shader::shader(	GLenum shader_type, 
+					const char* shader_source)
+		: handle_{create_shader_from_source(shader_type, 
+											shader_source)}
 	{
 	}
 
@@ -48,16 +51,14 @@ namespace graphics
 
 	void shader::attach(GLuint program_handle) const
 	{
-		assert(handle_ != 0);
-
+		assert(handle_ != 0); 
 		::glAttachShader(program_handle, handle_);
 	}
 
 
 	void shader::detach(GLuint program_handle) const
 	{
-		assert(handle_ != 0);
-
+		assert(handle_ != 0); 
 		::glDetachShader(program_handle, handle_);
 	}
 
@@ -73,8 +74,10 @@ namespace graphics
 
 
 
-	shader_program::shader_program(const shader& vertex_shader, const shader& fragment_shader)
-		: handle_{link(vertex_shader, fragment_shader)}
+	shader_program::shader_program(	const shader& vertex_shader, 
+									const shader& fragment_shader)
+		: handle_{link(	vertex_shader, 
+						fragment_shader)}
 	{
 	}
 
@@ -90,7 +93,9 @@ namespace graphics
 
 	void shader_program::bind()
 	{
+		assert(handle_ != 0); 
 		::glUseProgram(handle_);
+		check_opengl_error();
 	}
 
 
@@ -147,5 +152,7 @@ namespace graphics
 								1, 
 								GL_FALSE, 
 								glm::value_ptr(value));
+
+		check_opengl_error();
 	}
 }

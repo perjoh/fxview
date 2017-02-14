@@ -7,7 +7,11 @@ namespace mesh {
 
 		struct vertex
 		{
-			vertex(const glm::vec3& pos, const glm::vec3& norm, const glm::vec3& col)
+			vertex() = default;
+
+			vertex(	const glm::vec3& pos, 
+					const glm::vec3& norm, 
+					const glm::vec3& col)
 				: position(pos)
 				, normal(norm)
 				, color(col)
@@ -16,11 +20,12 @@ namespace mesh {
 			glm::vec3 position;
 			glm::vec3 normal;
 			glm::vec3 color;
-			static const GLuint stride = sizeof(position) + sizeof(normal) + sizeof(color);
+			static const GLuint stride = sizeof(vertex::position) + sizeof(vertex::normal) + sizeof(vertex::color);
 		};
 
 		static_assert(sizeof(glm::vec3) == sizeof(float)*3, "glm::vec3 should be 12 bytes");
 		static_assert(sizeof(vertex) == sizeof(glm::vec3)*3, "vertex structure should be packed");
+		static_assert(vertex::stride == sizeof(glm::vec3)*3, "stride is not correct");
 
 
 		const unsigned invalid_mesh_id = ~0;
