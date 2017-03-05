@@ -1,19 +1,16 @@
 #include "mesh_gen.hpp"
 #include <cassert>
 
-namespace graphics
-{
-	namespace mesh
-	{ 
-		static const unsigned NUM_VERTICES_CUBE = 36;
+namespace graphics {
+namespace mesh { 
 
-		triangle_array triangulate_shape(	unsigned num_segments, 
+		Triangle_array triangulate_shape(	unsigned num_segments, 
 											unsigned segment_size)
 		{
 			assert(num_segments > 1);
 			assert(segment_size > 1);
 
-			triangle_array triangles;
+			Triangle_array triangles;
 			triangles.reserve((num_segments - 1)*segment_size * 2);
 			for (	unsigned segment = 0;
 					segment < (num_segments - 1);
@@ -46,82 +43,78 @@ namespace graphics
 		}
 
 		//
-		point_array generate_cube(const glm::vec3& size)
+		Triangle_mesh<> generate_cube(const glm::vec3& size, const glm::vec3& color)
 		{
-			point_array cube;
-			cube.reserve(NUM_VERTICES_CUBE);
+			const unsigned num_vertices_cube = 4*2;
+
+			Triangle_mesh<> cube;
+			cube.vertices.reserve(num_vertices_cube);
 
 			const float s = 0.5f;
 
-			// Near
-			cube.emplace_back(point(-s, s, s)*size);
-			cube.emplace_back(point(s, s, s)*size);
-			cube.emplace_back(point(s, -s, s)*size);
-			cube.emplace_back(point(s, -s, s)*size);
-			cube.emplace_back(point(-s, -s, s)*size);
-			cube.emplace_back(point(-s, s, s)*size);
+			const float left = -s;
+			const float right = -left;
 
-			// Left
-			cube.emplace_back(point(-s, s, -s)*size);
-			cube.emplace_back(point(-s, s, s)*size);
-			cube.emplace_back(point(-s, -s, s)*size);
-			cube.emplace_back(point(-s, -s, s)*size);
-			cube.emplace_back( point(-s, -s, -s)*size);
-			cube.emplace_back( point(-s, s, -s)*size);
+			const float top = s;
+			const float bottom = -top;
 
-			// Far
-			cube.emplace_back(point(s, s, -s)*size);
-			cube.emplace_back(point(-s, s, -s)*size);
-			cube.emplace_back(point(-s, -s, -s)*size);
-			cube.emplace_back(point(-s, -s, -s)*size);
-			cube.emplace_back(point(s, -s, -s)*size);
-			cube.emplace_back(point(s, s, -s)*size);
+			const float near = s;
+			const float far = -near;
 
-			// Right
-			cube.emplace_back(point(s, s, s)*size);
-			cube.emplace_back(point(s, s, -s)*size);
-			cube.emplace_back(point(s, -s, -s)*size);
-			cube.emplace_back(point(s, -s, -s)*size);
-			cube.emplace_back(point(s, -s, s)*size);
-			cube.emplace_back(point(s, s, s)*size);
+			auto emit_indices = [](Triangle_array& triangles, unsigned i)
+			{
+				triangles.push_back(Triangle(i + 0, i + 1, i + 2));
+				triangles.push_back(Triangle(i + 2, i + 3, i + 0));
+			};
 
 			// Top
-			cube.emplace_back(point(-s, s, -s)*size);
-			cube.emplace_back(point(s, s, -s)*size);
-			cube.emplace_back(point(s, s, s)*size);
-			cube.emplace_back(point(s, s, s)*size);
-			cube.emplace_back(point(-s, s, s)*size);
-			cube.emplace_back(point(-s, s, -s)*size);
+			cube.vertices.emplace_back(glm::vec3(left, top, far)); 
+			cube.vertices.emplace_back(glm::vec3(right, top, far)); 
+			cube.vertices.emplace_back(glm::vec3(right, top, near)); 
+			cube.vertices.emplace_back(glm::vec3(left, top, near)); 
+			emit_indices(cube.triangles, cube.vertices.size() - 4);
 
 			// Bottom
-			cube.emplace_back(point(-s, -s, s)*size);
-			cube.emplace_back(point(s, -s, s)*size);
-			cube.emplace_back(point(s, -s, -s)*size);
-			cube.emplace_back(point(s, -s, -s)*size);
-			cube.emplace_back(point(-s, -s, -s)*size);
-			cube.emplace_back(point(-s, -s, s)*size);
+			cube.vertices.emplace_back(glm::vec3(left, bottom, near));
+			cube.vertices.emplace_back(glm::vec3(right, bottom, near));
+			cube.vertices.emplace_back(glm::vec3(right, bottom, far));
+			cube.vertices.emplace_back(glm::vec3(left, bottom, far));
+			emit_indices(cube.triangles, cube.vertices.size() - 4);
+
+			// Right
+			cube.vertices.emplace_back(glm::vec3(right, top, near));
+			cube.vertices.emplace_back(glm::vec3(right, top, far));
+			cube.vertices.emplace_back(glm::vec3(right, bottom, far));
+			cube.vertices.emplace_back(glm::vec3(right, bottom, near));
+			emit_indices(cube.triangles, cube.vertices.size() - 4);
+
+			// Left
+			cube.vertices.emplace_back(glm::vec3(left, top, far));
+			cube.vertices.emplace_back(glm::vec3(left, top, near));
+			cube.vertices.emplace_back(glm::vec3(left, bottom, near));
+			cube.vertices.emplace_back(glm::vec3(left, bottom, far));
+			emit_indices(cube.triangles, cube.vertices.size() - 4);
+
+			// Near
+			cube.vertices.emplace_back(glm::vec3(left, top, near));
+			cube.vertices.emplace_back(glm::vec3(right, top, near));
+			cube.vertices.emplace_back(glm::vec3(right, bottom, near));
+			cube.vertices.emplace_back(glm::vec3(left, bottom, near));
+			emit_indices(cube.triangles, cube.vertices.size() - 4);
+
+			// Far
+			cube.vertices.emplace_back(glm::vec3(right, top, far));
+			cube.vertices.emplace_back(glm::vec3(left, top, far));
+			cube.vertices.emplace_back(glm::vec3(left, bottom, far));
+			cube.vertices.emplace_back(glm::vec3(right, bottom, far));
+			emit_indices(cube.triangles, cube.vertices.size() - 4);
+
+			cube.for_each_vertex([&color](Vertex& v) { v.color = color; }); 
+
+			cube.calculate_vertex_normals();
 			
 			return cube; 
 		}
 
-		//
-		unsigned allocate_cube(	const glm::vec3& size, 
-								const glm::vec3& color)
-		{
-			auto points = generate_cube(size);
-
-			const float s = 0.5f;
-			std::vector<graphics::mesh::vertex> vertices(points.size());
-
-			for (unsigned i = 0; i < points.size(); ++i)
-			{
-				vertices[i].position = points[i]; 
-				vertices[i].color = color;
-			} 
-
-			calc_vertex_normals(&vertices[0], vertices.size());
-
-			return alloc_triangles(&vertices[0], vertices.size());
-		}
 	}
 }

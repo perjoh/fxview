@@ -1,105 +1,112 @@
 #pragma once
+#include <GL/glew.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
-namespace graphics 
-{
+namespace graphics {
+namespace render {
 
-	class shader
-	{
-	public :
-		shader(GLenum shader_type, const char* shader_source);
-		shader(const shader&) = delete;
-		~shader();
+	class Shader {
+	public:
+		Shader(GLenum shader_type, const char* shader_source);
+		Shader(const Shader&) = delete;
+		~Shader();
 
-		shader& operator=(const shader&) = delete;
+		Shader& operator=(const Shader&) = delete;
 
-	public :
+	public:
 		void attach(GLuint program_handle) const;
 		void detach(GLuint program_handle) const;
 
 		void destroy();
 
-	private :
-		GLuint handle_{0};
+	private:
+		GLuint handle_{ 0 };
 	};
 
-	template <typename T> class uniform;
+	template <typename T> class Uniform;
 
-	class shader_program
-	{
-	public :
-		shader_program(const shader_program&) = delete;
+	class Shader_program {
+	public:
+		Shader_program(const Shader_program&) = delete;
 
-		shader_program(	const shader& vertex_shader, 
-						const shader& fragment_shader);
+		Shader_program(const Shader& vertex_shader,
+					   const Shader& fragment_shader);
 
-		~shader_program();
+		~Shader_program();
 
-		shader_program& operator=(const shader_program&) = delete;
+		Shader_program& operator=(const Shader_program&) = delete;
 
-	public :
+	public:
 		void bind();
-		void unbind(); 
+		void unbind();
 
-	public :
+	public:
 		template <typename T>
-		uniform<T> get_uniform(const char* uniform_name) const 
+		Uniform<T> get_uniform(const char* uniform_name) const
 		{
 			const GLint location = ::glGetUniformLocation(handle_, uniform_name);
-			assert(location != -1);
-			return uniform<T>(location);
+			assert(location != -1 && "Uniform not found.");
+			return Uniform<T>(location);
 		}
 
-	private :
-		static GLuint link(	const shader& vertex_shader, 
-							const shader& fragment_shader);
+	private:
+		static GLuint link(const Shader& vertex_shader,
+						   const Shader& fragment_shader);
 
-		GLuint handle_{0};
+		GLuint handle_{ 0 };
 	};
 
 	template <typename T>
-	class uniform
+	class Uniform
 	{
-	private :
-		friend class shader_program;
+	private:
+		friend class Shader_program;
 
-		uniform(GLuint location)
+		Uniform(GLuint location)
 			: location_(location)
 		{ }
 
-	public :
-		void set(const T& value);
+	public:
+		void set(const T&) { assert(false); }
 
-	private :
+	private:
 		GLuint location_;
 	};
 
 
 	template <>
-	inline void uniform<float>::set(const float& value)
+	inline void Uniform<float>::set(const float& value)
 	{
 		::glUniform1f(location_, value);
 	}
 
 	template <>
-	inline void uniform<glm::vec3>::set(const glm::vec3& value)
+	inline void Uniform<glm::vec3>::set(const glm::vec3& value)
 	{
-		::glUniform3f(location_, value[0], value[1], value[2]); 
+		::glUniform3f(location_, value[0], value[1], value[2]);
 	}
 
 	template <>
-	inline void uniform<glm::vec4>::set(const glm::vec4& value)
+	inline void Uniform<glm::vec4>::set(const glm::vec4& value)
 	{
 		// glUniform4fv better?
 		::glUniform4f(location_, value[0], value[1], value[2], value[3]);
 	}
 
+	void set_uniform(GLuint location, const glm::mat3& value);
 	void set_uniform(GLuint location, const glm::mat4& value);
 
 	template <>
-	inline void uniform<glm::mat4>::set(const glm::mat4& value)
+	inline void Uniform<glm::mat3>::set(const glm::mat3& value)
 	{
-		//::glUniformMatrix4fv(location_, 1, GL_FALSE, glm::value_ptr(value));
 		set_uniform(location_, value);
 	}
 
-} 
+	template <>
+	inline void Uniform<glm::mat4>::set(const glm::mat4& value)
+	{
+		set_uniform(location_, value);
+	}
+
+} }

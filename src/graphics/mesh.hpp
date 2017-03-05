@@ -1,15 +1,27 @@
 #pragma once
-#include <glm/mat4x4.hpp>
-#include <GL/glew.h>
+#include <glm/glm.hpp>
+#include <vector>
 
 namespace graphics {
-namespace mesh { 
+namespace mesh {
 
-		struct vertex
+		//
+		inline glm::vec3 calculate_normal(const glm::vec3& v0,
+										  const glm::vec3& v1,
+										  const glm::vec3& v2)
 		{
-			vertex() = default;
+			return glm::normalize(glm::cross(v2 - v0, v1 - v0));
+		}
 
-			vertex(	const glm::vec3& pos, 
+		struct Vertex {
+
+			Vertex() = default;
+			
+			Vertex(const glm::vec3& pos)
+				: position(pos)
+			{ }
+
+			Vertex(	const glm::vec3& pos, 
 					const glm::vec3& norm, 
 					const glm::vec3& col)
 				: position(pos)
@@ -20,36 +32,89 @@ namespace mesh {
 			glm::vec3 position;
 			glm::vec3 normal;
 			glm::vec3 color;
-			static const GLuint stride = sizeof(vertex::position) + sizeof(vertex::normal) + sizeof(vertex::color);
 		};
 
-		static_assert(sizeof(glm::vec3) == sizeof(float)*3, "glm::vec3 should be 12 bytes");
-		static_assert(sizeof(vertex) == sizeof(glm::vec3)*3, "vertex structure should be packed");
-		static_assert(vertex::stride == sizeof(glm::vec3)*3, "stride is not correct");
+		struct Triangle {
+			Triangle() = default;
 
+			Triangle(unsigned v0_,
+					 unsigned v1_,
+					 unsigned v2_)
+				: v0(v0_)
+				, v1(v1_)
+				, v2(v2_)
+			{ }
 
-		const unsigned invalid_mesh_id = ~0;
+			unsigned v0{ ~0u };
+			unsigned v1{ ~0u };
+			unsigned v2{ ~0u };
+		};
 
+		typedef std::vector<Triangle> Triangle_array;
 
-		unsigned alloc_triangle_strip(	const vertex* vertices, 
-										size_t vertex_count);
+		//
+		template <typename Vertex = graphics::mesh::Vertex>
+		struct Triangle_mesh {
 
-		unsigned alloc_indexed_triangles(	const vertex* vertices, 
-											size_t vertex_count, 
-											const GLuint* indices, 
-											size_t index_count);
+			Triangle_mesh() = default;
 
-		unsigned alloc_triangles(	const vertex* vertices, 
-									size_t vertex_count,
-									GLenum draw_mode = GL_TRIANGLES);
+			Triangle_mesh(Triangle_mesh&& other)
+				: vertices(std::move(other.vertices))
+				, triangles(std::move(other.triangles))
+			{ }
 
-		void free(unsigned);
+			std::vector<Vertex> vertices;
+			Triangle_array triangles;
 
-		void set_projection_transform(const glm::mat4x4&);
-		void set_view_transform(const glm::mat4x4&);
+			template <typename Fun>
+			void for_each_vertex(Fun& f)
+			{
+				for (auto& vertex : vertices)
+				{
+					f(vertex);
+				} 
+			}
 
-		void draw(	unsigned mesh_id, 
-					const glm::mat4x4& transform, 
-					const glm::vec3& color);
+			//
+			void transform(const glm::mat4& m)
+			{
+				for_each_vertex([&m](Vertex& v) { v.position = m*v.position; });
+			}
 
-}}
+			//
+			void calculate_vertex_normals()
+			{
+				std::vector<unsigned> denom(vertices.size(), 0);
+
+				for (const Triangle& t : triangles)
+				{
+					auto p0{ vertices[t.v0].position };
+					auto p1{ vertices[t.v1].position };
+					auto p2{ vertices[t.v2].position };
+
+					auto normal = calculate_normal(p0, p1, p2);
+
+					vertices[t.v0].normal += normal;
+					vertices[t.v1].normal += normal;
+					vertices[t.v2].normal += normal;
+
+					denom[t.v0] += 1;
+					denom[t.v1] += 1;
+					denom[t.v2] += 1;
+				}
+
+				for (unsigned i = 0; i < denom.size(); ++i)
+				{
+					vertices[i].normal /= static_cast<float>(denom[i]);
+					glm::normalize(vertices[i].normal);
+				}
+			}
+
+			void set_color(const glm::vec3& color)
+			{
+				for_each_vertex([&color](Vertex& v) { v.color = color; });
+			}
+
+		};
+
+} }

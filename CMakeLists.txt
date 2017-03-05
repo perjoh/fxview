@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-project(effects_viewer)
+project(kvant)
 
 #set(CMAKE_LIBRARY_PATH "E:\\libs\\glew-2.0.0\\")
 
@@ -38,13 +38,14 @@ set(SOURCE_FILES	src/main.cpp
 					src/graphics/shader.cpp
 					src/graphics/mesh.cpp 
 					src/graphics/mesh_gen.cpp 
+					src/graphics/render.cpp 
 					)
 
-add_executable(fxview ${SOURCE_FILES})
+add_executable(kvant ${SOURCE_FILES})
 
-target_link_libraries(fxview	${SDL2_LIBRARY} 
+target_link_libraries(kvant	${SDL2_LIBRARY} 
 								${OPENGL_LIBRARIES}
 								${GLEW_LIBRARIES}
 								)
 
-#set_target_properties(fxview PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
+#set_target_properties(kvant PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")

@@ -1,6 +1,7 @@
 #include "graphics/window.hpp"
 #include "graphics/mesh.hpp"
 #include "graphics/mesh_gen.hpp"
+#include "graphics/render.hpp"
 #include "graphics/bezier.hpp"
 #include "base/task_runner.hpp"
 #include <iostream>
@@ -9,6 +10,7 @@
 #include <iostream>
 #include <cassert>
 #include <vector>
+#include <glm/gtx/transform.hpp>
 
 // Purpose: Generate a triangle mesh from a set of curves.
 //	Path curve - path along which to place the radius curve.
@@ -16,7 +18,7 @@
 //	Scale curve - determines the size of radius along path.
 // Rotation curve - determines rotation of radius along path.
 
-using graphics::mesh::point;
+/*using graphics::mesh::point;
  
 	graphics::curve::bezier_n<point> radius_curve{
 		point(0.0f, 0.0f, 1.0f),
@@ -41,9 +43,9 @@ using graphics::mesh::point;
 														point(1.0f, 0.0f, -1.0f), 
 														//point(1.0f, 0.0f, 1.0f), 
 														point(-1.0f, 0.0f, 1.0f)}, 2.5f) 
-	};
+	};*/
 
-	unsigned allocate_generated_mesh()
+	/*unsigned allocate_generated_mesh()
 	{
 		const graphics::curve::quadratic_sequence<point> radius_curve(
 			graphics::curve::generate_circular_sequence({
@@ -52,10 +54,6 @@ using graphics::mesh::point;
 				point(1.0f, 0.0f, 1.0f),
 				point(-1.0f, 0.0f, 1.0f)
 			}, 2.5f));
-
-		/*const graphics::curve::bezier_quadratic<point> path_curve{	point(0.0f, 0.0f, 0.0f),
-																	point(0.0f, 1.0f, 0.0f),
-																	point(0.0f, 2.0f, 0.0f) };*/
 
 		const graphics::curve::linear_curve<point> path_curve(point(0.0f, 0.0f, 0.0f),
 			point(0.0f, 7.5f, 0.0f));
@@ -85,7 +83,7 @@ using graphics::mesh::point;
 															num_segments,
 															segment_size);
 
-		std::vector<graphics::mesh::vertex> vertices(shape.size());
+		std::vector<graphics::data::Vertex> vertices(shape.size());
 		for (unsigned i = 0; i < shape.size(); ++i)
 		{
 			vertices[i].position = shape[i];
@@ -96,71 +94,60 @@ using graphics::mesh::point;
 		auto triangles = graphics::mesh::shaper::triangulate_shape(	num_segments, 
 																	segment_size);
 
-		graphics::mesh::calc_vertex_normals(&vertices[0], 
+		graphics::data::calc_vertex_normals(&vertices[0], 
 											vertices.size(), 
 											triangles);
 
-		return graphics::mesh::alloc_indexed_triangles(	&vertices[0], 
+		return graphics::render::alloc_indexed_triangles(	&vertices[0], 
 														vertices.size(), 
 														&triangles[0].v0, 
 														triangles.size()*3);
-	}
+	}*/
 
 
-	unsigned mesh_id = graphics::mesh::invalid_mesh_id;
+	unsigned mesh_id = graphics::render::Mesh_renderer::invalid_mesh_id;
 
 	void setup_my_render()
 	{
-		/*std::array<graphics::mesh::vertex, 4> vertices{
-			graphics::mesh::vertex{glm::vec3{-1.0f, -1.0f, 0.0f}, glm::vec3{1.0f, 0.0f, 0.0f}, glm::vec3{1.0f, 1.0f, 1.0f}},
-			graphics::mesh::vertex{glm::vec3{-1.0f, 1.0f, 0.0f}, glm::vec3{0.0f, 1.0f, 0.0f}, glm::vec3{1.0f, 1.0f, 1.0f}},
-			graphics::mesh::vertex{glm::vec3{1.0f, 1.0f, 0.0f}, glm::vec3{0.0f, 0.0f, 1.0f}, glm::vec3{1.0f, 1.0f, 1.0f}},
-			graphics::mesh::vertex{glm::vec3{1.0f, -1.0f, 0.0f}, glm::vec3{0.0f, 1.0f, 1.0f}, glm::vec3{1.0f, 1.0f, 1.0f}}};
-
-		std::array<GLuint, 6> indices{
-			0, 1, 2,
-			2, 3, 0
-		};
-
-		//mesh_id = graphics::mesh::alloc_triangles(&vertices[0], 3, GL_TRIANGLE_STRIP);
-		mesh_id = graphics::mesh::alloc_indexed_triangles(	&vertices[0],
-															vertices.size(),
-															&indices[0],
-															indices.size());*/
-
-															//mesh_id = allocate_generated_mesh();
-		mesh_id = graphics::mesh::allocate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		//mesh_id = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		auto cube = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube);
 	}
 
 	void my_render()
 	{
-		assert(mesh_id != graphics::mesh::invalid_mesh_id);
+		assert(mesh_id != graphics::render::Mesh_renderer::invalid_mesh_id);
+
+		using namespace graphics::render;
+
+		Mesh_renderer& mesh_renderer = Renderer::instance().mesh_renderer();
 
 		const glm::mat4 persp{ glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f) };
-		graphics::mesh::set_projection_transform(persp);
+		mesh_renderer.set_projection_transform(persp);
 
 		const glm::mat4 view = glm::lookAt(glm::vec3(5, 15, 10),
 										   glm::vec3(0, 0, 0),
 										   glm::vec3(0, 1, 0));
 
-		graphics::mesh::set_view_transform(view);
+		mesh_renderer.set_view_transform(view);
 
-		graphics::mesh::draw(mesh_id, glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		auto transform = glm::rotate(0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		mesh_renderer.render(mesh_id, glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	}
 
-	class anim_task
+	class AnimTask
 	{
 	public:
-		anim_task()
+		AnimTask()
 		{
 			using namespace base;
-			task_runner::instance().add_task(task_runner::task_delegate::construct<anim_task, &anim_task::fun>(this));
+			Task_runner::instance().add_task(Task_runner::task_delegate::construct<AnimTask, &AnimTask::Update>(this));
 		}
 
 	public :
-		unsigned fun(float)
+		unsigned Update(float)
 		{
-			return base::task_runner::task_ok;
+			return base::Task_runner::task_ok;
 		}
 
 	private :
@@ -181,7 +168,7 @@ int main()
 
 			my_render(); 
 			const bool keep_going = graphics::handle_events();
-			base::task_runner::instance().run(0.0f);
+			base::Task_runner::instance().run(0.0f);
 
 			graphics::end_render();
 

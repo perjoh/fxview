@@ -4,10 +4,10 @@
 
 namespace base
 { 
-	class task_runner
+	class Task_runner
 	{
 	public :
-		static task_runner& instance();
+		static Task_runner& instance();
 
 	public : 
 		enum task_status { task_ok, task_end };
@@ -20,7 +20,7 @@ namespace base
 		void run(float delta_ms);
 
 	private :
-		task_runner() = default;
+		Task_runner() = default;
 		std::vector<task_delegate> tasks_; 
 	};
 }
