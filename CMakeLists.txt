@@ -1,21 +1,34 @@
 cmake_minimum_required(VERSION 2.6)
 project(kvant)
 
-#set(CMAKE_LIBRARY_PATH "E:\\libs\\glew-2.0.0\\")
-
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 if (WIN32) 
+
+# Environment variable "LIBS" must be set to path to libraries.
+
 	find_package(OpenGL REQUIRED) 
-	set(CMAKE_PREFIX_PATH "e:/libs/glew-2.0.0")
-	set(CMAKE_LIBRARY_PATH "e:/libs/glew-2.0.0/lib/Release/Win32/")
+
+	# GLEW
+	find_path(MY_GLEW_PATH "include/GL/glew.h" PATHS "$ENV{LIBS}/*")
+	set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${MY_GLEW_PATH})
+	set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${MY_GLEW_PATH}/lib/Release/Win32/")
 	find_package(GLEW REQUIRED)
-	set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "e:/libs/SDL2-2.0.5")
-	set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "e:/libs/SDL2-2.0.5/lib/x86")
+
+	# SDL
+	find_path(MY_SDL_PATH "include/SDL.h" PATHS "$ENV{LIBS}/*")
+	set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${MY_SDL_PATH})
+	set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${MY_SDL_PATH}/lib/x86")
 	find_package(SDL2 REQUIRED)
-	set(GLM_INCLUDE_DIRS "e:/libs/glm-0.9.8.3")
+
+	# GLM
+	find_path(MY_GLM_PATH "glm/glm.hpp" PATHS "$ENV{LIBS}/*")
+	set(GLM_INCLUDE_DIRS ${MY_GLM_PATH})
+
 	add_compile_options(/W4)
+
 else()
+
 	add_compile_options(-std=c++11 -Wall -g)
 
 #set(SDL2_INCLUDE_DIRS /usr/include/SDL2)
