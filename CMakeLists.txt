@@ -14,6 +14,7 @@ if (WIN32)
 	set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "e:/libs/SDL2-2.0.5/lib/x86")
 	find_package(SDL2 REQUIRED)
 	set(GLM_INCLUDE_DIRS "e:/libs/glm-0.9.8.3")
+	add_compile_options(/W4)
 else()
 	add_compile_options(-std=c++11 -Wall -g)
 
@@ -47,5 +48,9 @@ target_link_libraries(kvant	${SDL2_LIBRARY}
 								${OPENGL_LIBRARIES}
 								${GLEW_LIBRARIES}
 								)
+
+add_executable(tests 	tests/main.cpp
+						tests/quad_tree.cpp
+						tests/shapes.cpp)
 
 #set_target_properties(kvant PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
