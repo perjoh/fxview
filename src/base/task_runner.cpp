@@ -1,5 +1,6 @@
 #include "task_runner.hpp"
 #include <algorithm>
+#include <SDL.h>
 
 namespace base
 {
@@ -9,26 +10,37 @@ namespace base
 		return inst;
 	}
 
-	void Task_runner::add_task(task_delegate f)
+	void Task_runner::add_task(Task_delegate f)
 	{
 		tasks_.push_back(f);
 	}
 
-	void Task_runner::run(float delta_ms)
+	void Task_runner::run()
 	{
-		for (	auto task_it = tasks_.begin();
-				task_it !=  tasks_.end();)
+		const unsigned now = ::SDL_GetTicks(); 
+		const double delta_ms = std::abs(static_cast<double>(now - last_tick_)); 
+		last_tick_ = now;
+
+		size_t num_tasks = tasks_.size();
+		for (size_t i = 0; i < num_tasks;)
 		{
-			const unsigned result = (*task_it)(delta_ms);
+			const unsigned result = tasks_[i](static_cast<float>(delta_ms));
 
 			if (task_end == result)
 			{
-				task_it = tasks_.erase(task_it); 
+				tasks_[i] = tasks_.back();
+				tasks_.pop_back();
+				num_tasks = tasks_.size();
 			}
 			else
 			{
-				++task_it;
+				++i;
 			}
 		}
+	}
+
+	Task_runner::Task_runner()
+		: last_tick_(::SDL_GetTicks())
+	{ 
 	}
 }

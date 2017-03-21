@@ -135,13 +135,13 @@
 		mesh_renderer.render(mesh_id, glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	}
 
-	class AnimTask
+	class Anim_task
 	{
 	public:
-		AnimTask()
+		Anim_task()
 		{
 			using namespace base;
-			Task_runner::instance().add_task(Task_runner::task_delegate::construct<AnimTask, &AnimTask::Update>(this));
+			Task_runner::instance().add_task(Task_runner::Task_delegate::construct<Anim_task, &Anim_task::Update>(this));
 		}
 
 	public :
@@ -151,6 +151,12 @@
 		}
 
 	private :
+	};
+
+	class Player_anim
+	{
+	public :
+	private : 
 	};
 
 
@@ -168,7 +174,7 @@ int main()
 
 			my_render(); 
 			const bool keep_going = graphics::handle_events();
-			base::Task_runner::instance().run(0.0f);
+			base::Task_runner::instance().run();
 
 			graphics::end_render();
 

@@ -13,14 +13,16 @@ namespace base
 		enum task_status { task_ok, task_end };
 
 		//typedef unsigned (*task_fun)(float delta_ms);
-		typedef fast_delegate<unsigned, float> task_delegate;
-		void add_task(task_delegate f); 
+		using Task_delegate = Fast_delegate<unsigned, float>;
+		void add_task(Task_delegate f); 
 
 	public :
-		void run(float delta_ms);
+		void run();
 
 	private :
-		Task_runner() = default;
-		std::vector<task_delegate> tasks_; 
+		Task_runner();
+		std::vector<Task_delegate> tasks_; 
+
+		unsigned last_tick_;
 	};
 }

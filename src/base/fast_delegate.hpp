@@ -1,55 +1,49 @@
 #pragma once
 #include <cassert>
 
-// From: http://www.codeproject.com/Articles/11015/The-Impossibly-Fast-C-Delegates
+// Based on: http://www.codeproject.com/Articles/11015/The-Impossibly-Fast-C-Delegates
 
 namespace base 
 {
 
-    template <typename return_type, typename argument_type>
-    class fast_delegate
+    template <typename Return_type, typename... Args>
+    class Fast_delegate
     {
     public :
-        fast_delegate()
+        Fast_delegate()
             : this_(nullptr)
             , f_(nullptr)
         { }
 
     public :
-        /*template <typename obj_type, unsigned (obj_type::*method)(argument_type)>
-        static fast_delegate construct(obj_type* that)
+        template <typename Obj, unsigned (Obj::*method)(Args...)>
+        static Fast_delegate construct(Obj* that)
         {
-            return fast_delegate(that, &stub_func<obj_type, method>);
-        }*/
-
-        template <typename obj_type, unsigned (obj_type::*method)(argument_type)>
-        static fast_delegate construct(obj_type* that)
-        {
-            return fast_delegate(reinterpret_cast<void*>(that), &stub_func<obj_type, method>);
+            return Fast_delegate(reinterpret_cast<void*>(that), &stub_func<Obj, method>);
         }
 
     public :
-        return_type operator()(argument_type a)
+        Return_type operator()(Args... a)
         {
             assert(this_);
             assert(f_);
-            return (*f_)(this_, a);
+            return (*f_)(this_, a...);
         }
 
     private :
-        template <typename obj_type, return_type (obj_type::*method)(argument_type)>
-        static return_type stub_func(void* that, argument_type a)
+        template <typename Obj, Return_type (Obj::*method)(Args...)>
+        static Return_type stub_func(void* that, Args... a)
         {
-            obj_type* this_ = reinterpret_cast<obj_type*>(that);
-            return (this_->*method)(a); 
+            Obj* this_ = reinterpret_cast<Obj*>(that);
+            return (this_->*method)(a...); 
         }
 
     private : 
-        typedef return_type (*stub_type)(void*, argument_type);
+		using Stub_type = Return_type (*)(void*, Args...);
         void* this_;
-        stub_type f_;
+        Stub_type f_;
 
-        fast_delegate(void* this__, stub_type f)
+        Fast_delegate(void* this__, Stub_type f)
             : this_(this__)
             , f_(f)
         { }

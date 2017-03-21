@@ -67,7 +67,7 @@ namespace mesh {
 			Triangle_array triangles;
 
 			template <typename Fun>
-			void for_each_vertex(Fun& f)
+			void for_each_vertex(const Fun& f)
 			{
 				for (auto& vertex : vertices)
 				{
