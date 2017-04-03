@@ -6,46 +6,165 @@
 namespace graphics {
 namespace curve {
 
-	template <typename point_type>
-	inline point_type lerp(	const point_type& a, 
-							const point_type& b, 
-							float t)
+	template <typename Point, typename T>
+	inline Point lerp(const Point& a, const Point& b, T t)
 	{
-		return a*(1.0f - t) + b*t;
+		return a*(1.0 - t) + b*t;
 	}
 
-	template <typename point_type>
-	inline point_type lerp(	const point_type& a, 
-							const point_type& b, 
-							float t0, 
-							float t1)
+	template <typename Point, typename T>
+	inline Point lerp(const Point& a, const Point& b, T t0, T t1)
 	{
 		// assert: t0 + t1 == 1
 		return a*t0 + b*t1;
 	}
 
-
-	template <typename point_type>
-	class linear_curve
+	template <typename T>
+	T pow2(T t)
 	{
-	public :
-		linear_curve(	const point_type& p0,
-						const point_type& p1)
-			: p0_(p0)
-			, p1_(p1)
-		{}
-		
-	public :
-		point_type sample(float t) const
-		{
-			return lerp(p0_, p1_, t); 
-		}
+		return t*t;
+	}
 
-	private :
-		point_type p0_;
-		point_type p1_;
+	template <typename T>
+	T pow3(T t)
+	{
+		return pow2(t)*t;
+	}
 
+	template <typename T>
+	T pow4(T t)
+	{
+		return pow2(t)*pow2(t);
+	}
+
+	template <int degree>
+	struct Bernstein {
+		template <int n>
+		static double value(double x);
 	};
+
+	template <>
+	struct Bernstein<0> {
+		template <int n>
+		static double value(double x)
+		{
+			return 1.0;
+		}
+	};
+
+	template <>
+	struct Bernstein<1> {
+		template <int n>
+		static double value(double x)
+		{
+			switch (n) {
+				case 0: return 1.0 - x;
+				case 1: return x;
+			}
+
+			return 0.0;
+		}
+	};
+
+	template <>
+	struct Bernstein<2> {
+		template <int n>
+		static double value(double x)
+		{
+			switch (n) {
+				case 0: return pow2(1.0 - x);
+				case 1: return 2.0*x*(1.0 - x);
+				case 2: return pow2(x);
+			}
+
+			return 0.0;
+		}
+	};
+
+	template <>
+	struct Bernstein<3> {
+		template <int n>
+		static double value(double x)
+		{
+			switch (n) {
+				case 0: return pow3(1.0 - x);
+				case 1: return 3.0*x*pow2(1.0 - x);
+				case 2: return 3.0*pow2(x)*(1.0 - x);
+				case 3: return pow3(x);
+			}
+
+			return 0.0;
+		}
+	};
+
+	template <>
+	struct Bernstein<4> {
+		template <int n>
+		static double value(double x)
+		{
+			switch (n) {
+				case 0: return pow4(1.0 - x);
+				case 1: return 4.0*x*pow3(1.0 - x);
+				case 2: return 6.0*pow2(x)*pow2(1.0 - x);
+				case 3: return 4.0*pow3(x)*(1.0 - x);
+				case 4: return pow4(x);
+			}
+
+			return 0.0;
+		}
+	};
+
+	template <typename Point, typename T, int degree, int n>
+	struct Polynomial_sum {
+		static T exec(const Point* points, const T* weights, T t)
+		{
+			return 	points[0]*bernstein_polynomial<degree, degree - n>(t)*weights[0] + 
+					Polynomial_sum<Point, T, degree, n - 1>::exec(points + 1, weights + 1, t);
+		}
+	};
+
+	template <typename Point, typename T, int degree>
+	struct Polynomial_sum<Point, T, degree, 0> {
+		static Point exec(const Point* points, const T* weights, T t)
+		{ 
+			return 	points[0]*bernstein_polynomial<degree, 0>(t)*weights[0];
+		}
+	};
+
+	template <int degree, typename Point, typename T>
+	inline Point sample(const Point* points, T t)
+	{
+		static const T weights[degree] = { T(1) };
+		return Polynomial_sum<Point, T, degree, degree>::exec(&points[0], &weights[0], t);
+	}
+
+	template <int degree, typename Point, typename T>
+	inline Point sample_weight(const Point* points, const T* weights, T t)
+	{
+		return Polynomial_sum<Point, T, degree, degree>::exec(&points[0], &weights[0], t)/sample<degree, Point, T>(&weights[0], t);
+	}
+
+	template <typename Point, typename T> 
+	inline Point sample_patch(const Point* patch, T t0, T t1)
+	{ 
+		const Point tmp[4] = { 	sample<3>(&patch[0], t0), 
+								sample<3>(&patch[4], t0), 
+								sample<3>(&patch[8], t0), 
+								sample<3>(&patch[12], t0) };
+
+		return sample<3>(&tmp[0], t1);
+	}
+
+	/*template <typename Point, typename T>
+	inline Point sample_patch_weight(const Point* patch, const T* weights, T t0, T t1)
+	{
+		const Point tmp[4] = { 	sample_weight<3>(&patch[0], 	&weights[0], 	t0), 
+								sample_weight<3>(&patch[4], 	&weights[4], 	t0), 
+								sample_weight<3>(&patch[8], 	&weights[8], 	t0), 
+								sample_weight<3>(&patch[12], 	&weights[12], 	t0) };
+
+		return sample<3>(&tmp[0], t1);
+	}*/
 
 	namespace details {
 
