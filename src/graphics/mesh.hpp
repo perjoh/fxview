@@ -45,6 +45,28 @@ namespace mesh {
 				, v2(v2_)
 			{ }
 
+			Triangle offset(unsigned i) const
+			{
+				Triangle t(*this);
+				t.v0 += i;
+				t.v1 += i;
+				t.v2 += i;
+				return t;
+			}
+
+			// Replace 'a' with 'b'.
+			void replace(unsigned a, unsigned b)
+			{
+				if (v0 == a)
+					v0 = b;
+
+				if (v1 == a)
+					v1 = b;
+
+				if (v2 == a)
+					v2 = b;
+			}
+
 			unsigned v0{ ~0u };
 			unsigned v1{ ~0u };
 			unsigned v2{ ~0u };
@@ -66,25 +88,36 @@ namespace mesh {
 			std::vector<Vertex> vertices;
 			Triangle_array triangles;
 
+			//
 			template <typename Fun>
-			void for_each_vertex(const Fun& f)
+			void foreach_vertex(Fun f)
 			{
-				for (auto& vertex : vertices)
+				for (auto& v : vertices)
 				{
-					f(vertex);
-				} 
+					f(v);
+				}
 			}
 
 			//
 			void transform(const glm::mat4& m)
 			{
-				for_each_vertex([&m](Vertex& v) { v.position = m*v.position; });
+				foreach_vertex([&m](Vertex& v){ 
+					glm::vec4 pos(v.position, 1.0f);
+					pos = m*pos;
+					v.position = glm::vec3(pos);
+				});
+			}
+
+			//
+			void scale(const glm::vec3& factor)
+			{
+				foreach_vertex([&factor](Vertex& v){ v.position *= factor; });
 			}
 
 			//
 			void calculate_vertex_normals()
 			{
-				std::vector<unsigned> denom(vertices.size(), 0);
+				std::vector<float> denom(vertices.size(), 0.0f);
 
 				for (const Triangle& t : triangles)
 				{
@@ -98,23 +131,105 @@ namespace mesh {
 					vertices[t.v1].normal += normal;
 					vertices[t.v2].normal += normal;
 
-					denom[t.v0] += 1;
-					denom[t.v1] += 1;
-					denom[t.v2] += 1;
+					denom[t.v0] += 1.0f;
+					denom[t.v1] += 1.0f;
+					denom[t.v2] += 1.0f;
 				}
 
 				for (unsigned i = 0; i < denom.size(); ++i)
 				{
-					vertices[i].normal /= static_cast<float>(denom[i]);
+					vertices[i].normal /= denom[i];
 					glm::normalize(vertices[i].normal);
 				}
 			}
 
-			void set_color(const glm::vec3& color)
+			//
+			void merge(const Triangle_mesh& other)
 			{
-				for_each_vertex([&color](Vertex& v) { v.color = color; });
+				size_t prev_num_vertices = vertices.size();
+				std::copy(other.vertices.begin(), other.vertices.end(), vertices.end());
+
+				for (const auto& triangle : other.triangles)
+				{
+					triangles.push_back(triangle.offset(prev_num_vertices));
+				}
 			}
 
+			// Removes all "equal" vertices. 
+			void compact()
+			{
+				for (size_t a = 0; a < vertices.size() - 1; ++a)
+				{
+					for (size_t b = a + 1; b < vertices.size(); ++b)
+					{
+						if (same_position(vertices[a].position, vertices[b].position))
+						{
+							replace_vertex(a, b);
+						}
+					}
+				}
+			} 
+
+			//
+			template <typename Patch>
+			void make_patch(const Patch& patch, unsigned num_samples_x, unsigned num_samples_y)
+			{
+				// Vertices.
+				vertices.reserve(vertices.size() + num_samples_x*num_samples_y);
+
+				const float dx = 1.0f/static_cast<float>(num_samples_x);
+				const float dy = 1.0f/static_cast<float>(num_samples_y);
+
+				float ty = 0.0f;
+				for (unsigned y = 0; y < num_samples_y + 1; ++y)
+				{
+					float tx = 0.0f;
+					for (unsigned x = 0; x < num_samples_x + 1; ++x)
+					{
+						Vertex v;
+						v.position = patch.sample(tx, ty);
+						vertices.push_back(v);
+
+						tx += dx; 
+					}
+
+					ty += dy;
+				} 
+
+				// Triangles.
+				const size_t triangle_offset = triangles.size();
+				triangles.reserve(triangle_offset + num_samples_x*num_samples_y*2); 
+				for (unsigned y = 0; y < num_samples_y; ++y)
+				{
+					for (unsigned x = 0; x < num_samples_x; ++x)
+					{
+						const unsigned v0 = triangle_offset + x + y*num_samples_x;
+						triangles.push_back({v0, v0 + 1, v0 + 1 + num_samples_x});
+						triangles.push_back({v0 + 1 + num_samples_x, v0 + num_samples_x, v0});
+					}
+				}
+			}
+
+		private  : 
+			//
+			static bool same_position(const Vertex& a, const Vertex& b) 
+			{
+				const decltype(a::x) threshold = 1.0/100000;
+				const auto d = b.position - a.position; 
+				return (d.x*d.x + d.y*d.y + d.z*d.z) < threshold;
+			}
+
+			//
+			void replace_vertex(size_t keep, size_t replace)
+			{
+				vertices[replace] = vertices.back();
+				vertices.pop_back();
+
+				for (auto& triangle : triangles)
+				{
+					triangle.replace(replace, keep);
+				}
+			}
 		};
 
 } }

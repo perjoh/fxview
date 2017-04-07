@@ -3,6 +3,7 @@
 #include "graphics/mesh_gen.hpp"
 #include "graphics/render.hpp"
 #include "graphics/bezier.hpp"
+#include "graphics/bezier_render.hpp"
 #include "base/task_runner.hpp"
 #include <iostream>
 #include <array>
@@ -110,8 +111,24 @@
 	void setup_my_render()
 	{
 		//mesh_id = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		auto cube = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube);
+		//auto cube = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		//mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube);
+
+		graphics::bezier::Patch<glm::vec3, float> p0({
+			glm::vec3(-0.8, 0.8, 0.0f), glm::vec3(-0.6, 0.8, 0.0), glm::vec3(0.6, 0.8, 0.0), glm::vec3(0.8, 0.8, 0.0), 
+			glm::vec3(-0.8, 0.6, 0.0f), glm::vec3(-0.6, 0.6, 0.5), glm::vec3(0.6, 0.6, 0.5), glm::vec3(0.8, 0.6, 0.0), 
+			glm::vec3(-0.8, -0.6, 0.0f), glm::vec3(-0.6, -0.6, 0.5), glm::vec3(0.6, -0.6, 0.5), glm::vec3(0.8, -0.6, 0.0), 
+			glm::vec3(-0.8, -0.8, 0.0f), glm::vec3(-0.6, -0.8, 0.0), glm::vec3(0.6, -0.8, 0.0), glm::vec3(0.8, -0.8, 0.0)
+		});
+
+		graphics::mesh::Triangle_mesh<> patch_mesh;
+		patch_mesh.make_patch(p0, 16, 16);
+		patch_mesh.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+		patch_mesh.make_patch(p0, 16, 16);
+		patch_mesh.calculate_vertex_normals();
+		patch_mesh.foreach_vertex([](graphics::mesh::Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
+		patch_mesh.scale(glm::vec3(5.0f));
+		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(patch_mesh);
 	}
 
 	void my_render()
@@ -133,6 +150,37 @@
 
 		auto transform = glm::rotate(0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
 		mesh_renderer.render(mesh_id, glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+		/*graphics::bezier::Curve<glm::vec3, float, 4> c0({	glm::vec3(0.2f, 0.8f, 0.0f), 
+															glm::vec3(0.8f, 0.8f, 0.0f), 
+															glm::vec3(0.8f, 0.2f, 0.0f), 
+															glm::vec3(0.2f, 0.2f, 0.0f) }, 
+															{1.0f, 1.0f, 1.0f, 1.0f});
+		graphics::curve::render_curve(c0, 16, glm::mat4(1.0f));
+
+		graphics::bezier::Curve<glm::vec3, float, 3> c1({	glm::vec3(-0.2f, 0.8f, 0.0f), 
+															glm::vec3(-0.8f, 0.8f, 0.0f), 
+															glm::vec3(-0.8f, 0.2f, 0.0f) }, 
+															{1.0f, 1.0f, 1.0f});
+		graphics::curve::render_curve(c1, 16, glm::mat4(1.0f));
+
+		graphics::bezier::Curve<glm::vec3, float, 5> c2({	glm::vec3(-0.2f, -0.8f, 0.0f), 
+															glm::vec3(-0.8f, -0.8f, 0.0f), 
+															glm::vec3(-0.8f, -0.2f, 0.0f),
+															glm::vec3(-0.2f, -0.2f, 0.0f), 
+															glm::vec3(-0.5f, -0.5f, 0.0f) }, 
+															{1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+		graphics::curve::render_curve(c2, 16, glm::mat4(1.0f));*/
+
+
+		/*graphics::bezier::Patch<glm::vec3, float> p0({
+			glm::vec3(-0.8, 0.8, 0.0f), glm::vec3(-0.6, 0.8, 0.0), glm::vec3(0.6, 0.8, 0.0), glm::vec3(0.8, 0.8, 0.0), 
+			glm::vec3(-0.8, 0.6, 0.0f), glm::vec3(-0.6, 0.6, 0.0), glm::vec3(0.6, 0.6, 0.0), glm::vec3(0.8, 0.6, 0.0), 
+			glm::vec3(-0.8, -0.6, 0.0f), glm::vec3(-0.6, -0.6, 0.0), glm::vec3(0.6, -0.6, 0.0), glm::vec3(0.8, -0.6, 0.0), 
+			glm::vec3(-0.8, -0.8, 0.0f), glm::vec3(-0.6, -0.8, 0.0), glm::vec3(0.6, -0.8, 0.0), glm::vec3(0.8, -0.8, 0.0)
+		});
+
+		graphics::curve::render_patch(p0, 16, glm::mat4(1.0f));*/
 	}
 
 	class Anim_task
