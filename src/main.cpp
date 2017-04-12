@@ -114,21 +114,40 @@
 		//auto cube = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		//mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube);
 
+
+		const float cube_size = 0.8f;
+		const float fluff = 0.2f;
+		const float corner_scale = 0.9;
+		const float inner_scale = 0.8f;
+
 		graphics::bezier::Patch<glm::vec3, float> p0({
-			glm::vec3(-0.8, 0.8, 0.0f), glm::vec3(-0.6, 0.8, 0.0), glm::vec3(0.6, 0.8, 0.0), glm::vec3(0.8, 0.8, 0.0), 
-			glm::vec3(-0.8, 0.6, 0.0f), glm::vec3(-0.6, 0.6, 0.5), glm::vec3(0.6, 0.6, 0.5), glm::vec3(0.8, 0.6, 0.0), 
-			glm::vec3(-0.8, -0.6, 0.0f), glm::vec3(-0.6, -0.6, 0.5), glm::vec3(0.6, -0.6, 0.5), glm::vec3(0.8, -0.6, 0.0), 
-			glm::vec3(-0.8, -0.8, 0.0f), glm::vec3(-0.6, -0.8, 0.0), glm::vec3(0.6, -0.8, 0.0), glm::vec3(0.8, -0.8, 0.0)
+			glm::vec3(-cube_size, cube_size, cube_size)*corner_scale,		glm::vec3(-(cube_size - fluff), cube_size, cube_size),									glm::vec3((cube_size - fluff), cube_size, cube_size),									glm::vec3(cube_size, cube_size, cube_size)*corner_scale, 
+			glm::vec3(-cube_size, (cube_size - fluff), cube_size),			glm::vec3(-(cube_size - fluff), (cube_size - fluff), cube_size + fluff)*inner_scale,	glm::vec3((cube_size - fluff), (cube_size - fluff), cube_size + fluff)*inner_scale,		glm::vec3(cube_size, (cube_size - fluff), cube_size), 
+			glm::vec3(-cube_size, -(cube_size - fluff), cube_size),			glm::vec3(-(cube_size - fluff), -(cube_size - fluff), cube_size + fluff)*inner_scale,	glm::vec3((cube_size - fluff), -(cube_size - fluff), cube_size + fluff)*inner_scale,	glm::vec3(cube_size, -(cube_size - fluff), cube_size), 
+			glm::vec3(-cube_size, -cube_size, cube_size)*corner_scale,		glm::vec3(-(cube_size - fluff), -cube_size, cube_size),									glm::vec3((cube_size - fluff), -cube_size, cube_size),									glm::vec3(cube_size, -cube_size, cube_size)*corner_scale
 		});
 
-		graphics::mesh::Triangle_mesh<> patch_mesh;
-		patch_mesh.make_patch(p0, 16, 16);
-		patch_mesh.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
-		patch_mesh.make_patch(p0, 16, 16);
-		patch_mesh.calculate_vertex_normals();
-		patch_mesh.foreach_vertex([](graphics::mesh::Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
-		patch_mesh.scale(glm::vec3(5.0f));
-		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(patch_mesh);
+		graphics::mesh::Triangle_mesh<> patch;
+		patch.make_patch(p0, 16, 16);
+		//patch.translate({0.0f, 0.0f, cube_size}); 
+		graphics::mesh::Triangle_mesh<> cube;
+		cube.merge(patch);
+		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+		cube.merge(patch);
+		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+		cube.merge(patch);
+		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+		cube.merge(patch);
+		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 0.0f, 1.0f)));
+		cube.merge(patch);
+		patch.transform(glm::rotate(glm::pi<float>(), glm::vec3(0.0f, 0.0f, 1.0f)));
+		cube.merge(patch);
+
+		cube.optimize();
+		cube.calculate_vertex_normals();
+		cube.foreach_vertex([](graphics::mesh::Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
+		cube.scale(glm::vec3(5.0f));
+		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube);
 	}
 
 	void my_render()
@@ -148,8 +167,10 @@
 
 		mesh_renderer.set_view_transform(view);
 
-		auto transform = glm::rotate(0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-		mesh_renderer.render(mesh_id, glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		static float ang = 0.0f;
+		auto transform = glm::rotate(ang, glm::vec3(0.0f, 1.0f, 0.0f));
+		ang += 0.0001f;
+		mesh_renderer.render(mesh_id, transform, glm::vec3(1.0f, 0.0f, 0.0f));
 
 		/*graphics::bezier::Curve<glm::vec3, float, 4> c0({	glm::vec3(0.2f, 0.8f, 0.0f), 
 															glm::vec3(0.8f, 0.8f, 0.0f), 

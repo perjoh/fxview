@@ -118,23 +118,23 @@ namespace bezier {
 
 
 		template <typename Point, typename T, int degree, int n>
-		struct Polynomial {
+		struct Curve_sampler {
 
 			static Point sum(const Point* points, T t)
 			{
 				return 	points[0]*Bernstein<degree, degree - n>::value(t) + 
-						Polynomial<Point, T, degree, n - 1>::sum(points + 1, t);
+						Curve_sampler<Point, T, degree, n - 1>::sum(points + 1, t);
 			}
 
 			static Point sum_weights(const Point* points, const T* weights, T t)
 			{
 				return 	points[0]*Bernstein<degree, degree - n>::value(t)*weights[0] + 
-						Polynomial<Point, T, degree, n - 1>::sum_weights(points + 1, weights + 1, t);
+						Curve_sampler<Point, T, degree, n - 1>::sum_weights(points + 1, weights + 1, t);
 			}
 		};
 
 		template <typename Point, typename T, int degree>
-		struct Polynomial<Point, T, degree, 0> {
+		struct Curve_sampler<Point, T, degree, 0> {
 			static Point sum(const Point* points, T t)
 			{ 
 				return points[0]*Bernstein<degree, degree>::value(t);
@@ -146,27 +146,60 @@ namespace bezier {
 			}
 		};
 
+		template <typename Point, typename T, int j = 3, int i = 3>
+		struct Surface_sampler {
+			static Point sum(const Point* points, T u, T v)
+			{
+				return points[i + j*4]*Bernstein<3, i>::value(u)*Bernstein<3, j>::value(v) 
+					+ Surface_sampler<Point, T, j, i - 1>::sum(points, u, v);
+			}
+
+			static Point fun(const Point* points, T u, T v)
+			{
+				return points[i + j*4]*Bernstein<3, i>::value(u)*Bernstein<3, j>::value(v);
+			}
+		};
+
+		template <typename Point, typename T, int j>
+		struct Surface_sampler<Point, T, j, 0> {
+			static Point sum(const Point* points, T u, T v)
+			{
+				return points[0 + j*4]*Bernstein<3, 0>::value(u)*Bernstein<3, j>::value(v) 
+					+ Surface_sampler<Point, T, j - 1, 3>::sum(points, u, v);
+			}
+		};
+
+		template <typename Point, typename T>
+		struct Surface_sampler<Point, T, 0, 0> {
+			static Point sum(const Point* points, T u, T v)
+			{
+				return points[0]*Bernstein<3, 0>::value(u)*Bernstein<3, 0>::value(v);
+			}
+		}; 
+
+
 		template <int degree, typename Point, typename T>
 		inline Point sample(const Point* points, T t)
 		{
-			return Polynomial<Point, T, degree, degree>::sum(&points[0], t);
+			return Curve_sampler<Point, T, degree, degree>::sum(&points[0], t);
 		}
 
 		template <int degree, typename Point, typename T>
 		inline Point sample_weight(const Point* points, const T* weights, T t)
 		{
-			return Polynomial<Point, T, degree, degree>::sum_weights(&points[0], &weights[0], t)/sample<degree, T, T>(&weights[0], t);
+			return Curve_sampler<Point, T, degree, degree>::sum_weights(&points[0], &weights[0], t)/sample<degree, T, T>(&weights[0], t);
 		}
 
 		template <typename Point, typename T> 
 		inline Point sample_patch(const Point* patch, T t0, T t1)
 		{ 
-			const Point tmp[4] = { 	sample<3>(&patch[0], t0), 
+			return Surface_sampler<Point, T>::sum(patch, t0, t1);
+			/*const Point tmp[4] = { 	sample<3>(&patch[0], t0), 
 									sample<3>(&patch[4], t0), 
 									sample<3>(&patch[8], t0), 
 									sample<3>(&patch[12], t0) };
 
-			return sample<3>(&tmp[0], t1);
+			return sample<3>(&tmp[0], t1);*/
 		}
 
 	}

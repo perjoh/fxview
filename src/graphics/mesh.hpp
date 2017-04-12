@@ -115,9 +115,20 @@ namespace mesh {
 			}
 
 			//
+			void translate(const glm::vec3& delta)
+			{
+				foreach_vertex([&delta](Vertex& v) { v.position += delta; });
+			}
+
+			//
 			void calculate_vertex_normals()
 			{
 				std::vector<float> denom(vertices.size(), 0.0f);
+
+				for (auto& v : vertices)
+				{
+					v.normal = glm::vec3(0.0f); 
+				}
 
 				for (const Triangle& t : triangles)
 				{
@@ -147,7 +158,7 @@ namespace mesh {
 			void merge(const Triangle_mesh& other)
 			{
 				size_t prev_num_vertices = vertices.size();
-				std::copy(other.vertices.begin(), other.vertices.end(), vertices.end());
+				std::copy(other.vertices.begin(), other.vertices.end(), std::back_inserter(vertices));
 
 				for (const auto& triangle : other.triangles)
 				{
@@ -156,7 +167,7 @@ namespace mesh {
 			}
 
 			// Removes all "equal" vertices. 
-			void compact()
+			void optimize()
 			{
 				for (size_t a = 0; a < vertices.size() - 1; ++a)
 				{
@@ -174,17 +185,30 @@ namespace mesh {
 			template <typename Patch>
 			void make_patch(const Patch& patch, unsigned num_samples_x, unsigned num_samples_y)
 			{
+				// Triangles.
+				const size_t triangle_offset = vertices.size();
+				triangles.reserve(triangle_offset + num_samples_x*num_samples_y*2); 
+				for (unsigned y = 0; y < num_samples_y - 1; ++y)
+				{
+					for (unsigned x = 0; x < num_samples_x - 1; ++x)
+					{
+						const unsigned v0 = triangle_offset + x + y*num_samples_x;
+						triangles.push_back({v0, v0 + 1, v0 + 1 + num_samples_x});
+						triangles.push_back({v0 + 1 + num_samples_x, v0 + num_samples_x, v0});
+					}
+				}
+
 				// Vertices.
 				vertices.reserve(vertices.size() + num_samples_x*num_samples_y);
 
-				const float dx = 1.0f/static_cast<float>(num_samples_x);
-				const float dy = 1.0f/static_cast<float>(num_samples_y);
+				const float dx = 1.0f/static_cast<float>(num_samples_x - 1);
+				const float dy = 1.0f/static_cast<float>(num_samples_y - 1);
 
 				float ty = 0.0f;
-				for (unsigned y = 0; y < num_samples_y + 1; ++y)
+				for (unsigned y = 0; y < num_samples_y; ++y)
 				{
 					float tx = 0.0f;
-					for (unsigned x = 0; x < num_samples_x + 1; ++x)
+					for (unsigned x = 0; x < num_samples_x; ++x)
 					{
 						Vertex v;
 						v.position = patch.sample(tx, ty);
@@ -194,19 +218,6 @@ namespace mesh {
 					}
 
 					ty += dy;
-				} 
-
-				// Triangles.
-				const size_t triangle_offset = triangles.size();
-				triangles.reserve(triangle_offset + num_samples_x*num_samples_y*2); 
-				for (unsigned y = 0; y < num_samples_y; ++y)
-				{
-					for (unsigned x = 0; x < num_samples_x; ++x)
-					{
-						const unsigned v0 = triangle_offset + x + y*num_samples_x;
-						triangles.push_back({v0, v0 + 1, v0 + 1 + num_samples_x});
-						triangles.push_back({v0 + 1 + num_samples_x, v0 + num_samples_x, v0});
-					}
 				}
 			}
 
@@ -214,7 +225,7 @@ namespace mesh {
 			//
 			static bool same_position(const Vertex& a, const Vertex& b) 
 			{
-				const decltype(a::x) threshold = 1.0/100000;
+				static const decltype(Vertex::position.x) threshold = 1.0/10000*2;
 				const auto d = b.position - a.position; 
 				return (d.x*d.x + d.y*d.y + d.z*d.z) < threshold;
 			}
@@ -228,6 +239,7 @@ namespace mesh {
 				for (auto& triangle : triangles)
 				{
 					triangle.replace(replace, keep);
+					triangle.replace(vertices.size(), replace);
 				}
 			}
 		};
