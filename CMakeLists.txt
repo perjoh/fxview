@@ -46,13 +46,15 @@ include_directories(	${SDL2_INCLUDE_DIR}
 						${GLM_INCLUDE_DIRS}
 						)
 
-set(SOURCE_FILES	src/main.cpp 
+set(SOURCE_FILES	src/main.cpp
 					src/base/task_runner.cpp
+					src/base/frame_time.cpp
 					src/graphics/window.cpp
 					src/graphics/shader.cpp
-					src/graphics/mesh.cpp 
-					src/graphics/mesh_gen.cpp 
-					src/graphics/render.cpp 
+					src/graphics/mesh.cpp
+					src/graphics/mesh_gen.cpp
+					src/graphics/render.cpp
+					src/graphics/shape_gen.cpp
 					)
 
 add_executable(kvant ${SOURCE_FILES})

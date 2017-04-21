@@ -41,6 +41,9 @@ namespace graphics {
 		//::glEnable(GL_CULL_FACE);
 		//::glCullFace(GL_FRONT);
 		//::glCullFace(GL_BACK);
+
+		// Enable v-sync.
+		::SDL_GL_SetSwapInterval(1);
 	}
 
 

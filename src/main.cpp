@@ -5,6 +5,7 @@
 #include "graphics/bezier.hpp"
 #include "graphics/bezier_render.hpp"
 #include "base/task_runner.hpp"
+#include "base/frame_time.hpp"
 #include <iostream>
 #include <array>
 #include <glm/gtc/matrix_transform.hpp>
@@ -112,8 +113,7 @@
 	{
 		//mesh_id = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		//auto cube = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		//mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube);
-
+		//mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube); 
 
 		const float cube_size = 0.8f;
 		const float fluff = 0.2f;
@@ -128,7 +128,7 @@
 		});
 
 		graphics::mesh::Triangle_mesh<> patch;
-		patch.make_patch(p0, 16, 16);
+		patch.make_patch(p0, 4, 4);
 		//patch.translate({0.0f, 0.0f, cube_size}); 
 		graphics::mesh::Triangle_mesh<> cube;
 		cube.merge(patch);
@@ -144,6 +144,7 @@
 		cube.merge(patch);
 
 		cube.optimize();
+		cube.make_non_indexed();
 		cube.calculate_vertex_normals();
 		cube.foreach_vertex([](graphics::mesh::Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
 		cube.scale(glm::vec3(5.0f));
@@ -169,7 +170,7 @@
 
 		static float ang = 0.0f;
 		auto transform = glm::rotate(ang, glm::vec3(0.0f, 1.0f, 0.0f));
-		ang += 0.0001f;
+		ang += base::Frame_time::const_instance().delta_time_sec()*glm::pi<double>()*0.5;
 		mesh_renderer.render(mesh_id, transform, glm::vec3(1.0f, 0.0f, 0.0f));
 
 		/*graphics::bezier::Curve<glm::vec3, float, 4> c0({	glm::vec3(0.2f, 0.8f, 0.0f), 
@@ -214,9 +215,8 @@
 		}
 
 	public :
-		unsigned Update(float)
+		void Update()
 		{
-			return base::Task_runner::task_ok;
 		}
 
 	private :
@@ -242,10 +242,14 @@ int main()
 			graphics::begin_render(); 
 
 			my_render(); 
+
 			const bool keep_going = graphics::handle_events();
+
 			base::Task_runner::instance().run();
 
 			graphics::end_render();
+
+			base::Frame_time::instance().next_frame();
 
 			if (!keep_going)
 				break;

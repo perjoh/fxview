@@ -301,7 +301,12 @@ namespace render {
 		Internal_mesh& m = allocated_meshes_[mesh_id];
 
 		m.setup_vertex_buffer_object(&tri_mesh.vertices[0], tri_mesh.vertices.size());
-		m.setup_element_buffer_object(&tri_mesh.triangles[0].v0, tri_mesh.triangles.size()*3);
+
+		if (!tri_mesh.triangles.empty()) 
+		{
+			m.setup_element_buffer_object(&tri_mesh.triangles[0].v0, tri_mesh.triangles.size()*3);
+		}
+
 		m.setup_vertex_array_object();
 
 		return mesh_id;

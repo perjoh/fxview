@@ -5,243 +5,292 @@
 namespace graphics {
 namespace mesh {
 
-		//
-		inline glm::vec3 calculate_normal(const glm::vec3& v0,
-										  const glm::vec3& v1,
-										  const glm::vec3& v2)
-		{
-			return glm::normalize(glm::cross(v2 - v0, v1 - v0));
-		}
+    //
+    inline glm::vec3 calculate_normal(const glm::vec3& v0,
+                                      const glm::vec3& v1,
+                                      const glm::vec3& v2)
+    {
+        return glm::normalize(glm::cross(v2 - v0, v1 - v0));
+    }
 
-		struct Vertex {
+    struct Vertex {
 
-			Vertex() = default;
-			
-			Vertex(const glm::vec3& pos)
-				: position(pos)
-			{ }
+        Vertex() = default;
 
-			Vertex(	const glm::vec3& pos, 
-					const glm::vec3& norm, 
-					const glm::vec3& col)
-				: position(pos)
-				, normal(norm)
-				, color(col)
-			{ }
+        Vertex(const glm::vec3& pos)
+            : position(pos)
+        {
+        }
 
-			glm::vec3 position;
-			glm::vec3 normal;
-			glm::vec3 color;
-		};
+        Vertex(const glm::vec3& pos,
+               const glm::vec3& norm,
+               const glm::vec3& col)
+            : position(pos)
+            , normal(norm)
+            , color(col)
+        {
+        }
 
-		struct Triangle {
-			Triangle() = default;
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec3 color;
+    };
 
-			Triangle(unsigned v0_,
-					 unsigned v1_,
-					 unsigned v2_)
-				: v0(v0_)
-				, v1(v1_)
-				, v2(v2_)
-			{ }
+    struct Triangle {
+        Triangle() = default;
 
-			Triangle offset(unsigned i) const
-			{
-				Triangle t(*this);
-				t.v0 += i;
-				t.v1 += i;
-				t.v2 += i;
-				return t;
-			}
+        Triangle(unsigned v0_,
+                 unsigned v1_,
+                 unsigned v2_)
+            : v0(v0_)
+            , v1(v1_)
+            , v2(v2_)
+        {
+        }
 
-			// Replace 'a' with 'b'.
-			void replace(unsigned a, unsigned b)
-			{
-				if (v0 == a)
-					v0 = b;
+        Triangle offset(unsigned i) const
+        {
+            Triangle t(*this);
+            t.v0 += i;
+            t.v1 += i;
+            t.v2 += i;
+            return t;
+        }
 
-				if (v1 == a)
-					v1 = b;
+        // Replace 'a' with 'b'.
+        void replace(unsigned a, unsigned b)
+        {
+            if (v0 == a)
+                v0 = b;
 
-				if (v2 == a)
-					v2 = b;
-			}
+            if (v1 == a)
+                v1 = b;
 
-			unsigned v0{ ~0u };
-			unsigned v1{ ~0u };
-			unsigned v2{ ~0u };
-		};
+            if (v2 == a)
+                v2 = b;
+        }
 
-		typedef std::vector<Triangle> Triangle_array;
+        unsigned v0{~0u};
+        unsigned v1{~0u};
+        unsigned v2{~0u};
+    };
 
-		//
-		template <typename Vertex = graphics::mesh::Vertex>
-		struct Triangle_mesh {
+    typedef std::vector<Triangle> Triangle_array;
 
-			Triangle_mesh() = default;
+    //
+    template <typename Vertex = graphics::mesh::Vertex>
+    struct Triangle_mesh {
 
-			Triangle_mesh(Triangle_mesh&& other)
-				: vertices(std::move(other.vertices))
-				, triangles(std::move(other.triangles))
-			{ }
+        Triangle_mesh() = default;
 
-			std::vector<Vertex> vertices;
-			Triangle_array triangles;
+        Triangle_mesh(Triangle_mesh&& other)
+            : vertices(std::move(other.vertices))
+            , triangles(std::move(other.triangles))
+        {
+        }
 
-			//
-			template <typename Fun>
-			void foreach_vertex(Fun f)
-			{
-				for (auto& v : vertices)
-				{
-					f(v);
-				}
-			}
+        std::vector<Vertex> vertices;
+        Triangle_array triangles;
 
-			//
-			void transform(const glm::mat4& m)
-			{
-				foreach_vertex([&m](Vertex& v){ 
-					glm::vec4 pos(v.position, 1.0f);
-					pos = m*pos;
-					v.position = glm::vec3(pos);
-				});
-			}
+        //
+        template <typename Fun>
+        void foreach_vertex(Fun f)
+        {
+            for (auto& v : vertices)
+            {
+                f(v);
+            }
+        }
 
-			//
-			void scale(const glm::vec3& factor)
-			{
-				foreach_vertex([&factor](Vertex& v){ v.position *= factor; });
-			}
+        //
+        void transform(const glm::mat4& m)
+        {
+            foreach_vertex([&m](Vertex& v) {
+                glm::vec4 pos(v.position, 1.0f);
+                pos        = m * pos;
+                v.position = glm::vec3(pos);
+            });
+        }
 
-			//
-			void translate(const glm::vec3& delta)
-			{
-				foreach_vertex([&delta](Vertex& v) { v.position += delta; });
-			}
+        //
+        void scale(const glm::vec3& factor)
+        {
+            foreach_vertex([&factor](Vertex& v) { v.position *= factor; });
+        }
 
-			//
-			void calculate_vertex_normals()
-			{
-				std::vector<float> denom(vertices.size(), 0.0f);
+        //
+        void translate(const glm::vec3& delta)
+        {
+            foreach_vertex([&delta](Vertex& v) { v.position += delta; });
+        }
 
-				for (auto& v : vertices)
-				{
-					v.normal = glm::vec3(0.0f); 
-				}
+        //
+        void calculate_vertex_normals()
+        {
+            if (!triangles.empty())
+            {
+                std::vector<float> denom(vertices.size(), 0.0f);
 
-				for (const Triangle& t : triangles)
-				{
-					auto p0{ vertices[t.v0].position };
-					auto p1{ vertices[t.v1].position };
-					auto p2{ vertices[t.v2].position };
+				// Initialize
+                for (auto& v : vertices)
+                {
+                    v.normal = glm::vec3(0.0f);
+                }
 
-					auto normal = calculate_normal(p0, p1, p2);
+				// Count and sum.
+                for (const Triangle& t : triangles)
+                {
+                    auto p0{vertices[t.v0].position};
+                    auto p1{vertices[t.v1].position};
+                    auto p2{vertices[t.v2].position};
 
-					vertices[t.v0].normal += normal;
-					vertices[t.v1].normal += normal;
-					vertices[t.v2].normal += normal;
+                    auto normal = calculate_normal(p0, p1, p2);
 
-					denom[t.v0] += 1.0f;
-					denom[t.v1] += 1.0f;
-					denom[t.v2] += 1.0f;
-				}
+                    vertices[t.v0].normal += normal;
+                    vertices[t.v1].normal += normal;
+                    vertices[t.v2].normal += normal;
 
-				for (unsigned i = 0; i < denom.size(); ++i)
-				{
-					vertices[i].normal /= denom[i];
-					glm::normalize(vertices[i].normal);
-				}
-			}
+                    denom[t.v0] += 1.0f;
+                    denom[t.v1] += 1.0f;
+                    denom[t.v2] += 1.0f;
+                }
 
-			//
-			void merge(const Triangle_mesh& other)
-			{
-				size_t prev_num_vertices = vertices.size();
-				std::copy(other.vertices.begin(), other.vertices.end(), std::back_inserter(vertices));
+				// Divide
+                for (unsigned i = 0; i < denom.size(); ++i)
+                {
+                    vertices[i].normal /= denom[i];
+                    glm::normalize(vertices[i].normal);
+                }
+            }
+            else
+            {
+                assert(vertices.size() % 3 == 0);
 
-				for (const auto& triangle : other.triangles)
-				{
-					triangles.push_back(triangle.offset(prev_num_vertices));
-				}
-			}
+                for (size_t i = 0; i < vertices.size(); i += 3)
+                {
+                    const auto normal = calculate_normal(vertices[i + 0].position,
+                                                         vertices[i + 1].position,
+                                                         vertices[i + 2].position);
 
-			// Removes all "equal" vertices. 
-			void optimize()
-			{
-				for (size_t a = 0; a < vertices.size() - 1; ++a)
-				{
-					for (size_t b = a + 1; b < vertices.size(); ++b)
-					{
-						if (same_position(vertices[a].position, vertices[b].position))
-						{
-							replace_vertex(a, b);
-						}
-					}
-				}
-			} 
+                    vertices[i + 0].normal = normal;
+                    vertices[i + 1].normal = normal;
+                    vertices[i + 2].normal = normal;
+                }
+            }
+        }
 
-			//
-			template <typename Patch>
-			void make_patch(const Patch& patch, unsigned num_samples_x, unsigned num_samples_y)
-			{
-				// Triangles.
-				const size_t triangle_offset = vertices.size();
-				triangles.reserve(triangle_offset + num_samples_x*num_samples_y*2); 
-				for (unsigned y = 0; y < num_samples_y - 1; ++y)
-				{
-					for (unsigned x = 0; x < num_samples_x - 1; ++x)
-					{
-						const unsigned v0 = triangle_offset + x + y*num_samples_x;
-						triangles.push_back({v0, v0 + 1, v0 + 1 + num_samples_x});
-						triangles.push_back({v0 + 1 + num_samples_x, v0 + num_samples_x, v0});
-					}
-				}
+        //
+        void merge(const Triangle_mesh& other)
+        {
+            size_t prev_num_vertices = vertices.size();
+            std::copy(other.vertices.begin(), other.vertices.end(), std::back_inserter(vertices));
 
-				// Vertices.
-				vertices.reserve(vertices.size() + num_samples_x*num_samples_y);
+            for (const auto& triangle : other.triangles)
+            {
+                triangles.push_back(triangle.offset(prev_num_vertices));
+            }
+        }
 
-				const float dx = 1.0f/static_cast<float>(num_samples_x - 1);
-				const float dy = 1.0f/static_cast<float>(num_samples_y - 1);
+        // Removes all "equal" vertices.
+        void optimize()
+        {
+            for (size_t a = 0; a < vertices.size() - 1; ++a)
+            {
+                for (size_t b = a + 1; b < vertices.size(); ++b)
+                {
+                    if (same_position(vertices[a].position, vertices[b].position))
+                    {
+                        replace_vertex(a, b);
+                        --b; // Since one vertex is removed.
+                    }
+                }
+            }
+        }
 
-				float ty = 0.0f;
-				for (unsigned y = 0; y < num_samples_y; ++y)
-				{
-					float tx = 0.0f;
-					for (unsigned x = 0; x < num_samples_x; ++x)
-					{
-						Vertex v;
-						v.position = patch.sample(tx, ty);
-						vertices.push_back(v);
+        //
+        void make_non_indexed()
+        {
+            std::vector<Vertex> tmp_vertices;
+            tmp_vertices.reserve(vertices.size());
 
-						tx += dx; 
-					}
+            for (const auto& triangle : triangles)
+            {
+                tmp_vertices.push_back(vertices[triangle.v0]);
+                tmp_vertices.push_back(vertices[triangle.v1]);
+                tmp_vertices.push_back(vertices[triangle.v2]);
+            }
 
-					ty += dy;
-				}
-			}
+            vertices.swap(tmp_vertices);
+            triangles.swap(Triangle_array());
+        }
 
-		private  : 
-			//
-			static bool same_position(const Vertex& a, const Vertex& b) 
-			{
-				static const decltype(Vertex::position.x) threshold = 1.0/10000*2;
-				const auto d = b.position - a.position; 
-				return (d.x*d.x + d.y*d.y + d.z*d.z) < threshold;
-			}
+    public:
+        //
+        template <typename Patch>
+        void make_patch(const Patch& patch,
+                        unsigned num_samples_x,
+                        unsigned num_samples_y)
+        {
+            // Triangles.
+            const size_t triangle_offset = vertices.size();
+            triangles.reserve(triangle_offset + num_samples_x * num_samples_y * 2);
+            for (unsigned y = 0; y < num_samples_y - 1; ++y)
+            {
+                for (unsigned x = 0; x < num_samples_x - 1; ++x)
+                {
+                    const unsigned v0 = triangle_offset + x + y * num_samples_x;
+                    triangles.push_back({v0, v0 + 1, v0 + 1 + num_samples_x});
+                    triangles.push_back({v0 + 1 + num_samples_x, v0 + num_samples_x, v0});
+                }
+            }
 
-			//
-			void replace_vertex(size_t keep, size_t replace)
-			{
-				vertices[replace] = vertices.back();
-				vertices.pop_back();
+            // Vertices.
+            vertices.reserve(vertices.size() + num_samples_x * num_samples_y);
 
-				for (auto& triangle : triangles)
-				{
-					triangle.replace(replace, keep);
-					triangle.replace(vertices.size(), replace);
-				}
-			}
-		};
+            const float dx = 1.0f / static_cast<float>(num_samples_x - 1);
+            const float dy = 1.0f / static_cast<float>(num_samples_y - 1);
 
-} }
+            float ty = 0.0f;
+            for (unsigned y = 0; y < num_samples_y; ++y)
+            {
+                float tx = 0.0f;
+                for (unsigned x = 0; x < num_samples_x; ++x)
+                {
+                    Vertex v;
+                    v.position = patch.sample(tx, ty);
+                    vertices.push_back(v);
+
+                    tx += dx;
+                }
+
+                ty += dy;
+            }
+        }
+
+    private:
+        //
+        static bool same_position(const Vertex& a, const Vertex& b)
+        {
+            static const decltype(Vertex::position.x) threshold = 1.0 / 10000 * 2;
+            const auto d                                        = b.position - a.position;
+            return (d.x * d.x + d.y * d.y + d.z * d.z) < threshold;
+        }
+
+        //
+        void replace_vertex(size_t keep, size_t replace)
+        {
+            assert(keep < replace);
+
+            vertices[replace] = vertices.back();
+            vertices.pop_back();
+
+            for (auto& triangle : triangles)
+            {
+                triangle.replace(replace, keep);
+                triangle.replace(vertices.size(), replace);
+            }
+        }
+    };
+
+} // namespace mesh
+} // namespace graphics
