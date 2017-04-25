@@ -1,11 +1,12 @@
 #include "shape_gen.hpp"
 #include "bezier.hpp"
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace graphics { 
 namespace shape_gen {
 
-	Triangle_mesh<> smooth_cube(const glm::vec3& size, unsigned level_of_detail)
+	mesh::Triangle_mesh<> smooth_cube(const glm::vec3& size, unsigned level_of_detail)
 	{
 		const float cube_size = 0.8f;
 		const float fluff = 0.2f;
@@ -19,20 +20,20 @@ namespace shape_gen {
 			glm::vec3(-cube_size, -cube_size, cube_size)*corner_scale,		glm::vec3(-(cube_size - fluff), -cube_size, cube_size),									glm::vec3((cube_size - fluff), -cube_size, cube_size),									glm::vec3(cube_size, -cube_size, cube_size)*corner_scale
 		});
 
-		graphics::mesh::Triangle_mesh<> patch;
+		mesh::Triangle_mesh<> patch;
 		patch.make_patch(p0, 4, 4);
 
-		graphics::mesh::Triangle_mesh<> cube;
+		mesh::Triangle_mesh<> cube;
 		cube.merge(patch);
-		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+		patch.transform(glm::rotate(glm::mat4(1.0f), glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
 		cube.merge(patch);
-		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+		patch.transform(glm::rotate(glm::mat4(1.0f), glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
 		cube.merge(patch);
-		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+		patch.transform(glm::rotate(glm::mat4(1.0f), glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
 		cube.merge(patch);
-		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 0.0f, 1.0f)));
+		patch.transform(glm::rotate(glm::mat4(1.0f), glm::pi<float>()*0.5f, glm::vec3(0.0f, 0.0f, 1.0f)));
 		cube.merge(patch);
-		patch.transform(glm::rotate(glm::pi<float>(), glm::vec3(0.0f, 0.0f, 1.0f)));
+		patch.transform(glm::rotate(glm::mat4(1.0f), glm::pi<float>(), glm::vec3(0.0f, 0.0f, 1.0f)));
 		cube.merge(patch);
 
 		cube.optimize();
@@ -40,6 +41,8 @@ namespace shape_gen {
 		cube.calculate_vertex_normals();
 		cube.foreach_vertex([](graphics::mesh::Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
 		cube.scale(glm::vec3(5.0f));
+
+		return cube;
 	}
 
 }}
