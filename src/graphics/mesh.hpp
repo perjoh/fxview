@@ -191,6 +191,21 @@ namespace mesh {
             }
         }
 
+		//
+		void merge_triangles(const std::vector<glm::vec3>& vertices_src)
+		{
+			assert(vertices_src.size() % 3 == 0);
+
+			vertices.reserve(vertices.size() + vertices_src.size());
+
+			for (const auto& vert_src : vertices_src)
+			{ 
+				Vertex vert_new;
+				vert_new.position = vert_src;
+				vertices.push_back(vert_new);
+			}
+		}
+
         // Removes all "equal" vertices.
         void optimize()
         {

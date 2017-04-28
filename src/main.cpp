@@ -1,6 +1,7 @@
 #include "graphics/window.hpp"
 #include "graphics/mesh.hpp"
-#include "graphics/mesh_gen.hpp"
+//#include "graphics/mesh_gen.hpp"
+#include "graphics/shape_gen.hpp"
 #include "graphics/render.hpp"
 #include "graphics/bezier.hpp"
 #include "graphics/bezier_render.hpp"
@@ -115,7 +116,7 @@
 		//auto cube = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		//mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube); 
 
-		const float cube_size = 0.8f;
+		/*const float cube_size = 0.8f;
 		const float fluff = 0.2f;
 		const float corner_scale = 0.9;
 		const float inner_scale = 0.8f;
@@ -148,7 +149,9 @@
 		cube.calculate_vertex_normals();
 		cube.foreach_vertex([](graphics::mesh::Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
 		cube.scale(glm::vec3(5.0f));
-		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube);
+		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube);*/
+		//mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(graphics::shape_gen::generate_cube(glm::vec3(3.0f)));
+		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(graphics::shape_gen::generate_grid(64, 64, 0.5f));
 	}
 
 	void my_render()
@@ -162,7 +165,7 @@
 		const glm::mat4 persp{ glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f) };
 		mesh_renderer.set_projection_transform(persp);
 
-		const glm::mat4 view = glm::lookAt(glm::vec3(5, 15, 10),
+		const glm::mat4 view = glm::lookAt(glm::vec3(5, 50, 10),
 										   glm::vec3(0, 0, 0),
 										   glm::vec3(0, 1, 0));
 

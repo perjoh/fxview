@@ -93,7 +93,7 @@ namespace render {
 	void main() 
 	{
 		gl_Position = model_view_projection*vec4(position, 1.0f);
-		vec3 lightpos = vec3(25.0f, 50.0f, 0.0f);
+		vec3 lightpos = vec3(20.0f, 50.0f, 10.0f);
 		vec3 normal_trans = model_transform*normal;
 		float shade = dot(normalize(lightpos - position), normal_trans);
 		the_color = min(color + shade, vec3(1.0f, 1.0f, 1.0f));
