@@ -57,6 +57,9 @@ set(SOURCE_FILES	src/main.cpp
 					src/graphics/shape_gen.cpp
 					)
 
+add_custom_target(pre_build_step 
+					python bin2cpp.py src/graphics/shaders/basic_fs.glsl graphics::shader::basic > src/graphics/shaders/basic_fs.h)
+
 add_executable(kvant ${SOURCE_FILES})
 
 target_link_libraries(kvant	${SDL2_LIBRARY} 
@@ -67,5 +70,7 @@ target_link_libraries(kvant	${SDL2_LIBRARY}
 add_executable(tests 	tests/main.cpp
 						tests/quad_tree.cpp
 						tests/shapes.cpp)
+
+add_dependencies(${PROJECT_NAME} pre_build_step) 
 
 #set_target_properties(kvant PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
