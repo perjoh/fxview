@@ -25,7 +25,7 @@ if (WIN32)
 	find_path(MY_GLM_PATH "glm/glm.hpp" PATHS "$ENV{LIBS}/*")
 	set(GLM_INCLUDE_DIRS ${MY_GLM_PATH})
 
-	add_compile_options(/W4)
+	add_compile_options(/W4 /std:c++14)
 
 else()
 
