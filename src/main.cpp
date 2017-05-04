@@ -1,9 +1,12 @@
 #include "graphics/window.hpp"
 #include "graphics/mesh.hpp"
-#include "graphics/mesh_gen.hpp"
+//#include "graphics/mesh_gen.hpp"
+#include "graphics/shape_gen.hpp"
 #include "graphics/render.hpp"
 #include "graphics/bezier.hpp"
+#include "graphics/bezier_render.hpp"
 #include "base/task_runner.hpp"
+#include "base/frame_time.hpp"
 #include <iostream>
 #include <array>
 #include <glm/gtc/matrix_transform.hpp>
@@ -110,8 +113,45 @@
 	void setup_my_render()
 	{
 		//mesh_id = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		auto cube = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube);
+		//auto cube = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		//mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube); 
+
+		/*const float cube_size = 0.8f;
+		const float fluff = 0.2f;
+		const float corner_scale = 0.9;
+		const float inner_scale = 0.8f;
+
+		graphics::bezier::Patch<glm::vec3, float> p0({
+			glm::vec3(-cube_size, cube_size, cube_size)*corner_scale,		glm::vec3(-(cube_size - fluff), cube_size, cube_size),									glm::vec3((cube_size - fluff), cube_size, cube_size),									glm::vec3(cube_size, cube_size, cube_size)*corner_scale, 
+			glm::vec3(-cube_size, (cube_size - fluff), cube_size),			glm::vec3(-(cube_size - fluff), (cube_size - fluff), cube_size + fluff)*inner_scale,	glm::vec3((cube_size - fluff), (cube_size - fluff), cube_size + fluff)*inner_scale,		glm::vec3(cube_size, (cube_size - fluff), cube_size), 
+			glm::vec3(-cube_size, -(cube_size - fluff), cube_size),			glm::vec3(-(cube_size - fluff), -(cube_size - fluff), cube_size + fluff)*inner_scale,	glm::vec3((cube_size - fluff), -(cube_size - fluff), cube_size + fluff)*inner_scale,	glm::vec3(cube_size, -(cube_size - fluff), cube_size), 
+			glm::vec3(-cube_size, -cube_size, cube_size)*corner_scale,		glm::vec3(-(cube_size - fluff), -cube_size, cube_size),									glm::vec3((cube_size - fluff), -cube_size, cube_size),									glm::vec3(cube_size, -cube_size, cube_size)*corner_scale
+		});
+
+		graphics::mesh::Triangle_mesh<> patch;
+		patch.make_patch(p0, 4, 4);
+		//patch.translate({0.0f, 0.0f, cube_size}); 
+		graphics::mesh::Triangle_mesh<> cube;
+		cube.merge(patch);
+		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+		cube.merge(patch);
+		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+		cube.merge(patch);
+		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+		cube.merge(patch);
+		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 0.0f, 1.0f)));
+		cube.merge(patch);
+		patch.transform(glm::rotate(glm::pi<float>(), glm::vec3(0.0f, 0.0f, 1.0f)));
+		cube.merge(patch);
+
+		cube.optimize();
+		cube.make_non_indexed();
+		cube.calculate_vertex_normals();
+		cube.foreach_vertex([](graphics::mesh::Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
+		cube.scale(glm::vec3(5.0f));
+		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube);*/
+		//mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(graphics::shape_gen::generate_cube(glm::vec3(3.0f)));
+		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(graphics::shape_gen::generate_grid(64, 64, 0.5f));
 	}
 
 	void my_render()
@@ -125,14 +165,47 @@
 		const glm::mat4 persp{ glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f) };
 		mesh_renderer.set_projection_transform(persp);
 
-		const glm::mat4 view = glm::lookAt(glm::vec3(5, 15, 10),
+		const glm::mat4 view = glm::lookAt(glm::vec3(5, 50, 10),
 										   glm::vec3(0, 0, 0),
 										   glm::vec3(0, 1, 0));
 
 		mesh_renderer.set_view_transform(view);
 
-		auto transform = glm::rotate(0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-		mesh_renderer.render(mesh_id, glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		static float ang = 0.0f;
+		auto transform = glm::rotate(ang, glm::vec3(0.0f, 1.0f, 0.0f));
+		ang += base::Frame_time::const_instance().delta_time_sec()*glm::pi<double>()*0.5;
+		mesh_renderer.render(mesh_id, transform, glm::vec3(1.0f, 0.0f, 0.0f));
+
+		/*graphics::bezier::Curve<glm::vec3, float, 4> c0({	glm::vec3(0.2f, 0.8f, 0.0f), 
+															glm::vec3(0.8f, 0.8f, 0.0f), 
+															glm::vec3(0.8f, 0.2f, 0.0f), 
+															glm::vec3(0.2f, 0.2f, 0.0f) }, 
+															{1.0f, 1.0f, 1.0f, 1.0f});
+		graphics::curve::render_curve(c0, 16, glm::mat4(1.0f));
+
+		graphics::bezier::Curve<glm::vec3, float, 3> c1({	glm::vec3(-0.2f, 0.8f, 0.0f), 
+															glm::vec3(-0.8f, 0.8f, 0.0f), 
+															glm::vec3(-0.8f, 0.2f, 0.0f) }, 
+															{1.0f, 1.0f, 1.0f});
+		graphics::curve::render_curve(c1, 16, glm::mat4(1.0f));
+
+		graphics::bezier::Curve<glm::vec3, float, 5> c2({	glm::vec3(-0.2f, -0.8f, 0.0f), 
+															glm::vec3(-0.8f, -0.8f, 0.0f), 
+															glm::vec3(-0.8f, -0.2f, 0.0f),
+															glm::vec3(-0.2f, -0.2f, 0.0f), 
+															glm::vec3(-0.5f, -0.5f, 0.0f) }, 
+															{1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+		graphics::curve::render_curve(c2, 16, glm::mat4(1.0f));*/
+
+
+		/*graphics::bezier::Patch<glm::vec3, float> p0({
+			glm::vec3(-0.8, 0.8, 0.0f), glm::vec3(-0.6, 0.8, 0.0), glm::vec3(0.6, 0.8, 0.0), glm::vec3(0.8, 0.8, 0.0), 
+			glm::vec3(-0.8, 0.6, 0.0f), glm::vec3(-0.6, 0.6, 0.0), glm::vec3(0.6, 0.6, 0.0), glm::vec3(0.8, 0.6, 0.0), 
+			glm::vec3(-0.8, -0.6, 0.0f), glm::vec3(-0.6, -0.6, 0.0), glm::vec3(0.6, -0.6, 0.0), glm::vec3(0.8, -0.6, 0.0), 
+			glm::vec3(-0.8, -0.8, 0.0f), glm::vec3(-0.6, -0.8, 0.0), glm::vec3(0.6, -0.8, 0.0), glm::vec3(0.8, -0.8, 0.0)
+		});
+
+		graphics::curve::render_patch(p0, 16, glm::mat4(1.0f));*/
 	}
 
 	class Anim_task
@@ -145,9 +218,8 @@
 		}
 
 	public :
-		unsigned Update(float)
+		void Update()
 		{
-			return base::Task_runner::task_ok;
 		}
 
 	private :
@@ -173,10 +245,14 @@ int main()
 			graphics::begin_render(); 
 
 			my_render(); 
+
 			const bool keep_going = graphics::handle_events();
+
 			base::Task_runner::instance().run();
 
 			graphics::end_render();
+
+			base::Frame_time::instance().next_frame();
 
 			if (!keep_going)
 				break;

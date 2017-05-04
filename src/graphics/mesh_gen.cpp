@@ -109,7 +109,7 @@ namespace mesh {
 			cube.vertices.emplace_back(glm::vec3(right, bottom, far));
 			emit_indices(cube.triangles, cube.vertices.size() - 4);
 
-			cube.for_each_vertex([&color](Vertex& v) { v.color = color; }); 
+			cube.foreach_vertex([&color](Vertex& v) { v.color = color; }); 
 
 			cube.calculate_vertex_normals();
 			

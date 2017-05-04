@@ -1,0 +1,35 @@
+
+	Data:
+		- Entities (Dynamic objects that move around, player, enemies, items) 
+			Flow: Physics -> Input / AI -> Collision detection (static/dynamic) -> Rendering
+
+		- Static collision data
+		- World render data
+		- UI render data
+		- Effects (No collision detection, can be connected to moving entities?) 
+
+	Modules: 
+		- Physics 
+			Apply physics to all physics flagged entities.
+
+		- Input 
+			Update position of player entity.
+
+		- AI 
+			Update positions of hostile entities.
+
+		- Collision Detection 
+			Perform collision detection on all entities with static geometry.  Flagged?
+			Perform collision detection between all moving entities. Flagged?
+
+		- Frame Based Task Runner
+			Run submitted tasks.
+			Accept task submissions at any time.
+
+		- Rendering 
+			Render in order:
+				all entities
+				world
+				effects
+				UI 
+

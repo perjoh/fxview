@@ -9,3 +9,4 @@ CMakeCache.txt
 *.VC.*
 *.sln
 cmake_install.cmake
+*.pyc

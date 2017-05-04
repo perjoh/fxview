@@ -10,19 +10,17 @@ namespace base
 		static Task_runner& instance();
 
 	public : 
-		enum task_status { task_ok, task_end };
-
-		//typedef unsigned (*task_fun)(float delta_ms);
-		using Task_delegate = Fast_delegate<unsigned, float>;
+		using Task_delegate = Fast_delegate<void, void>;
 		void add_task(Task_delegate f); 
 
 	public :
 		void run();
 
+		void end_current();
+
 	private :
 		Task_runner();
-		std::vector<Task_delegate> tasks_; 
-
-		unsigned last_tick_;
+		std::vector<Task_delegate> tasks_;
+		size_t current_task_;
 	};
 }

@@ -7,8 +7,7 @@
 namespace graphics {
 
 	SDL_Window* g_window = nullptr; 
-	SDL_GLContext g_glcontext = nullptr;
-
+	SDL_GLContext g_glcontext = nullptr; 
 
 	void create_graphics(	unsigned window_width, 
 							unsigned window_height, 
@@ -39,9 +38,13 @@ namespace graphics {
 		} 
 
 		::glEnable(GL_DEPTH_TEST);
-		//::glEnable(GL_CULL_FACE);
-		//::glCullFace(GL_FRONT);
-		//::glCullFace(GL_BACK);
+
+		::glEnable(GL_CULL_FACE);
+		::glFrontFace(GL_CW);
+		::glCullFace(GL_BACK);
+
+		// Enable v-sync.
+		::SDL_GL_SetSwapInterval(1);
 	}
 
 
@@ -56,7 +59,7 @@ namespace graphics {
 
 	void clear_buffers()
 	{
-        glClearColor(0.0, 1.0, 0.0, 1.0f);
+        glClearColor(0.0, 0.0, 0.0, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	}
 

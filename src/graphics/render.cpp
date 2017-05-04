@@ -93,7 +93,7 @@ namespace render {
 	void main() 
 	{
 		gl_Position = model_view_projection*vec4(position, 1.0f);
-		vec3 lightpos = vec3(25.0f, 50.0f, 0.0f);
+		vec3 lightpos = vec3(20.0f, 50.0f, 10.0f);
 		vec3 normal_trans = model_transform*normal;
 		float shade = dot(normalize(lightpos - position), normal_trans);
 		the_color = min(color + shade, vec3(1.0f, 1.0f, 1.0f));
@@ -301,7 +301,12 @@ namespace render {
 		Internal_mesh& m = allocated_meshes_[mesh_id];
 
 		m.setup_vertex_buffer_object(&tri_mesh.vertices[0], tri_mesh.vertices.size());
-		m.setup_element_buffer_object(&tri_mesh.triangles[0].v0, tri_mesh.triangles.size()*3);
+
+		if (!tri_mesh.triangles.empty()) 
+		{
+			m.setup_element_buffer_object(&tri_mesh.triangles[0].v0, tri_mesh.triangles.size()*3);
+		}
+
 		m.setup_vertex_array_object();
 
 		return mesh_id;

@@ -1,18 +1,13 @@
 #pragma once
-#include "bezier_curve.hpp"
+#include "mesh.hpp"
 
 namespace graphics {
+namespace shape_gen {
 
-	// 
-	template <typename point_type>
-	class path_volume
-	{
-	public :
-	private :
-		typedef bezier_curve<point_type> curve_type;
-		curve_type spine_;
-		curve_type spine_scale_;
-		curve_type radial_;
-	};
+    mesh::Triangle_mesh<> generate_smooth_cube(const glm::vec3& size, unsigned level_of_detail = 4);
+    mesh::Triangle_mesh<> generate_cube(const glm::vec3& size);
 
-}
+    mesh::Triangle_mesh<> generate_grid(unsigned int width, unsigned int height, float unit_size = 1.0f);
+
+} // namespace shape_gen
+} // namespace graphics
