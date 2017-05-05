@@ -128,14 +128,14 @@ namespace mesh {
         void calculate_vertex_normals()
         {
             if (!triangles.empty())
-            {
-                std::vector<float> denom(vertices.size(), 0.0f);
-
+            { 
 				// Initialize
                 for (auto& v : vertices)
                 {
                     v.normal = glm::vec3(0.0f);
                 }
+
+                std::vector<float> denom(vertices.size(), 0.0f);
 
 				// Count and sum.
                 for (const Triangle& t : triangles)
