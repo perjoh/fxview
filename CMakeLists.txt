@@ -54,7 +54,6 @@ set(SOURCE_FILES	src/main.cpp
 					src/graphics/mesh.cpp
 					src/graphics/mesh_gen.cpp
 					src/graphics/render.cpp
-					src/graphics/shape_gen.cpp
 					)
 
 add_custom_target(pre_build_step 

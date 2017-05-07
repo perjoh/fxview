@@ -1,120 +1,192 @@
-#include "mesh_gen.hpp"
-#include <cassert>
+#include "shape_gen.hpp"
+#include "bezier.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace graphics {
-namespace mesh { 
+namespace mesh {
 
-		Triangle_array triangulate_shape(	unsigned num_segments, 
-											unsigned segment_size)
+    mesh::Triangle_mesh<> generate_smooth_cube(const glm::vec3& size,
+                                               unsigned level_of_detail)
+    {
+        const float cube_size = 0.8f;
+        const float fluff = 0.2f;
+        const float corner_scale = 0.9;
+        const float inner_scale = 0.8f;
+
+        graphics::bezier::Patch<glm::vec3, float> p0({glm::vec3(-cube_size, cube_size, cube_size) * corner_scale,
+                                                      glm::vec3(-(cube_size - fluff), cube_size, cube_size),
+                                                      glm::vec3((cube_size - fluff), cube_size, cube_size),
+                                                      glm::vec3(cube_size, cube_size, cube_size) * corner_scale,
+                                                      glm::vec3(-cube_size, (cube_size - fluff), cube_size),
+                                                      glm::vec3(-(cube_size - fluff), (cube_size - fluff), cube_size + fluff) * inner_scale,
+                                                      glm::vec3((cube_size - fluff), (cube_size - fluff), cube_size + fluff) * inner_scale,
+                                                      glm::vec3(cube_size, (cube_size - fluff), cube_size),
+                                                      glm::vec3(-cube_size, -(cube_size - fluff), cube_size),
+                                                      glm::vec3(-(cube_size - fluff), -(cube_size - fluff), cube_size + fluff) * inner_scale,
+                                                      glm::vec3((cube_size - fluff), -(cube_size - fluff), cube_size + fluff) * inner_scale,
+                                                      glm::vec3(cube_size, -(cube_size - fluff), cube_size),
+                                                      glm::vec3(-cube_size, -cube_size, cube_size) * corner_scale,
+                                                      glm::vec3(-(cube_size - fluff), -cube_size, cube_size),
+                                                      glm::vec3((cube_size - fluff), -cube_size, cube_size),
+                                                      glm::vec3(cube_size, -cube_size, cube_size) * corner_scale});
+
+        mesh::Triangle_mesh<> patch;
+        patch.make_patch(p0, 4, 4);
+
+        mesh::Triangle_mesh<> cube;
+        cube.merge(patch);
+        patch.transform(glm::rotate(glm::mat4(1.0f), glm::pi<float>() * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+        cube.merge(patch);
+        patch.transform(glm::rotate(glm::mat4(1.0f), glm::pi<float>() * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+        cube.merge(patch);
+        patch.transform(glm::rotate(glm::mat4(1.0f), glm::pi<float>() * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
+        cube.merge(patch);
+        patch.transform(glm::rotate(glm::mat4(1.0f), glm::pi<float>() * 0.5f, glm::vec3(0.0f, 0.0f, 1.0f)));
+        cube.merge(patch);
+        patch.transform(glm::rotate(glm::mat4(1.0f), glm::pi<float>(), glm::vec3(0.0f, 0.0f, 1.0f)));
+        cube.merge(patch);
+
+        cube.optimize();
+        //cube.make_non_indexed();
+        cube.calculate_vertex_normals();
+        cube.foreach_vertex([](graphics::mesh::Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
+        cube.scale(glm::vec3(5.0f));
+
+        return cube;
+    }
+
+    mesh::Triangle_mesh<> generate_cube(const glm::vec3& size)
+    {
+        const float top = size.y;
+        const float bottom = -top;
+        const float right = size.x;
+        const float left = -right;
+        const float far = -size.z;
+        const float near = -far;
+
+        mesh::Triangle_mesh<> cube;
+        { // top
+            std::vector<glm::vec3> quad{{left, top, far},
+                                        {right, top, far},
+                                        {right, top, near},
+                                        {right, top, near},
+                                        {left, top, near},
+                                        {left, top, far}};
+
+            cube.merge_triangles(quad);
+        }
+        { // bottom
+            std::vector<glm::vec3> quad{{left, bottom, -far},
+                                        {right, bottom, -far},
+                                        {right, bottom, -near},
+                                        {right, bottom, -near},
+                                        {left, bottom, -near},
+                                        {left, bottom, -far}};
+
+            cube.merge_triangles(quad);
+        }
+        { // right
+            std::vector<glm::vec3> quad{{right, top, near},
+                                        {right, top, far},
+                                        {right, bottom, far},
+                                        {right, bottom, far},
+                                        {right, bottom, near},
+                                        {right, top, near}};
+
+            cube.merge_triangles(quad);
+        }
+        { // left
+            std::vector<glm::vec3> quad{{left, top, -near},
+                                        {left, top, -far},
+                                        {left, bottom, -far},
+                                        {left, bottom, -far},
+                                        {left, bottom, -near},
+                                        {left, top, -near}};
+
+            cube.merge_triangles(quad);
+        }
+        { // far
+            std::vector<glm::vec3> quad{{right, top, far},
+                                        {left, top, far},
+                                        {left, bottom, far},
+                                        {left, bottom, far},
+                                        {right, bottom, far},
+                                        {right, top, far}};
+
+            cube.merge_triangles(quad);
+        }
+        { // near
+            std::vector<glm::vec3> quad{{-right, top, near},
+                                        {-left, top, near},
+                                        {-left, bottom, near},
+                                        {-left, bottom, near},
+                                        {-right, bottom, near},
+                                        {-right, top, near}};
+
+            cube.merge_triangles(quad);
+        }
+
+        cube.calculate_vertex_normals();
+        cube.foreach_vertex([](graphics::mesh::Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
+
+        return cube;
+    }
+
+    mesh::Triangle_mesh<> generate_grid(unsigned int width,
+                                        unsigned int height,
+                                        float unit_size)
+    {
+		const float start_x = -static_cast<float>(width)*0.5f*unit_size;
+		const float start_z = -static_cast<float>(height)*0.5f*unit_size;
+
+		const float step_x = unit_size;
+		const float step_z = unit_size;
+
+		std::vector<glm::vec3> vertices;
+
+		float z = start_z;
+		for (unsigned counter_z = 0; counter_z < height; ++counter_z)
 		{
-			assert(num_segments > 1);
-			assert(segment_size > 1);
+			float x = start_x;
 
-			Triangle_array triangles;
-			triangles.reserve((num_segments - 1)*segment_size * 2);
-			for (	unsigned segment = 0;
-					segment < (num_segments - 1);
-					++segment)
+			for (unsigned counter_x = 0; counter_x < width; ++counter_x)
 			{
-				for (	unsigned i = 0;
-						i < segment_size;
-						++i)
-				{ 
-					const unsigned offset = segment_size*segment;
-					auto wrap = [segment_size](unsigned i){ return i%segment_size; };
+				vertices.push_back({x, 0.0f, z});
+				vertices.push_back({x + step_x, 0.0f, z});
+				vertices.push_back({x + step_x, 0.0f, z + step_z});
 
-					{
-						unsigned v0 = i + offset;
-						unsigned v1 = wrap(i + 1) + offset;
-						unsigned v2 = wrap(i + 1) + segment_size + offset;
-						triangles.emplace_back(v0, v1, v2);
-					} 
+				vertices.push_back({x + step_x, 0.0f, z + step_z});
+				vertices.push_back({x, 0.0f, z + step_z});
+				vertices.push_back({x, 0.0f, z});
 
-					{
-						unsigned v0 = wrap(i + 1) + segment_size + offset;
-						unsigned v1 = i + segment_size + offset;
-						unsigned v2 = i + offset;
-						triangles.emplace_back(v0, v1, v2);
-					}
-				} 
-			} 
+				x += step_x;
+			}
 
-			return triangles;
+			z += step_z;
 		}
 
-		//
-		Triangle_mesh<> generate_cube(const glm::vec3& size, const glm::vec3& color)
+        mesh::Triangle_mesh<> grid;
+		grid.merge_triangles(vertices);
+		grid.calculate_vertex_normals();
+		//grid.foreach_vertex([](graphics::mesh::Vertex& v) { v.normal = glm::vec3(0.0f, 1.0f, 0.0f); });
+
+		for (size_t i = 0; i < grid.vertices.size(); i += 6)
 		{
-			const unsigned num_vertices_cube = 4*2;
+			static const glm::vec3 white{ 1.0f };
+			static const glm::vec3 grey{ 1.0f, 0.0f, 0.0f };
 
-			Triangle_mesh<> cube;
-			cube.vertices.reserve(num_vertices_cube);
-
-			const float s = 0.5f;
-
-			const float left = -s;
-			const float right = -left;
-
-			const float top = s;
-			const float bottom = -top;
-
-			const float near = s;
-			const float far = -near;
-
-			auto emit_indices = [](Triangle_array& triangles, unsigned i)
-			{
-				triangles.push_back(Triangle(i + 0, i + 1, i + 2));
-				triangles.push_back(Triangle(i + 2, i + 3, i + 0));
-			};
-
-			// Top
-			cube.vertices.emplace_back(glm::vec3(left, top, far)); 
-			cube.vertices.emplace_back(glm::vec3(right, top, far)); 
-			cube.vertices.emplace_back(glm::vec3(right, top, near)); 
-			cube.vertices.emplace_back(glm::vec3(left, top, near)); 
-			emit_indices(cube.triangles, cube.vertices.size() - 4);
-
-			// Bottom
-			cube.vertices.emplace_back(glm::vec3(left, bottom, near));
-			cube.vertices.emplace_back(glm::vec3(right, bottom, near));
-			cube.vertices.emplace_back(glm::vec3(right, bottom, far));
-			cube.vertices.emplace_back(glm::vec3(left, bottom, far));
-			emit_indices(cube.triangles, cube.vertices.size() - 4);
-
-			// Right
-			cube.vertices.emplace_back(glm::vec3(right, top, near));
-			cube.vertices.emplace_back(glm::vec3(right, top, far));
-			cube.vertices.emplace_back(glm::vec3(right, bottom, far));
-			cube.vertices.emplace_back(glm::vec3(right, bottom, near));
-			emit_indices(cube.triangles, cube.vertices.size() - 4);
-
-			// Left
-			cube.vertices.emplace_back(glm::vec3(left, top, far));
-			cube.vertices.emplace_back(glm::vec3(left, top, near));
-			cube.vertices.emplace_back(glm::vec3(left, bottom, near));
-			cube.vertices.emplace_back(glm::vec3(left, bottom, far));
-			emit_indices(cube.triangles, cube.vertices.size() - 4);
-
-			// Near
-			cube.vertices.emplace_back(glm::vec3(left, top, near));
-			cube.vertices.emplace_back(glm::vec3(right, top, near));
-			cube.vertices.emplace_back(glm::vec3(right, bottom, near));
-			cube.vertices.emplace_back(glm::vec3(left, bottom, near));
-			emit_indices(cube.triangles, cube.vertices.size() - 4);
-
-			// Far
-			cube.vertices.emplace_back(glm::vec3(right, top, far));
-			cube.vertices.emplace_back(glm::vec3(left, top, far));
-			cube.vertices.emplace_back(glm::vec3(left, bottom, far));
-			cube.vertices.emplace_back(glm::vec3(right, bottom, far));
-			emit_indices(cube.triangles, cube.vertices.size() - 4);
-
-			cube.foreach_vertex([&color](Vertex& v) { v.color = color; }); 
-
-			cube.calculate_vertex_normals();
-			
-			return cube; 
+			const glm::vec3 color = ((i / 6 + (i/6/width)%2) % 2) == 0 ? white : grey;
+			grid.vertices[i + 0].color = color;
+			grid.vertices[i + 1].color = color;
+			grid.vertices[i + 2].color = color;
+			grid.vertices[i + 3].color = color;
+			grid.vertices[i + 4].color = color;
+			grid.vertices[i + 5].color = color;
 		}
 
-	}
-}
+        return grid;
+    }
+
+} // namespace shape_gen
+} // namespace graphics
