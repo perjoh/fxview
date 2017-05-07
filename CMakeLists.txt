@@ -58,7 +58,7 @@ set(SOURCE_FILES	src/main.cpp
 					)
 
 add_custom_target(pre_build_step 
-					python bin2cpp.py src/graphics/shaders/basic_fs.glsl graphics::shader::basic > src/graphics/shaders/basic_fs.h)
+					python pre_build_step.py)
 
 add_executable(kvant ${SOURCE_FILES})
 

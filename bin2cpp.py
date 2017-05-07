@@ -18,7 +18,7 @@ def __write_footer(contents):
 	for ns in contents[:-1]:
 		print "}"
 
-def format_char(c):
+def __format_char(c):
 	return '0x{:02X}'.format(ord(c)) 
 
 def process(input_filename, var_name):
@@ -32,18 +32,18 @@ def process(input_filename, var_name):
             num_bytes_per_row = 12
             work_str = ''
             for byte in bytes[:-1]:
-                work_str += "{}, ".format(format_char(byte))
+                work_str += "{}, ".format(__format_char(byte))
                 counter = counter + 1
                 if counter == num_bytes_per_row:
                     counter = 0;
                     print "\t\t", work_str
                     work_str = ''
-            work_str += "{}".format(format_char(bytes[-1]))
+            work_str += "{}".format(__format_char(bytes[-1]))
             print "\t\t", work_str
 
             __write_footer(naming)
 
-def main(): 
+def __main(): 
     process(sys.argv[1], sys.argv[2])
 
 def __test():
