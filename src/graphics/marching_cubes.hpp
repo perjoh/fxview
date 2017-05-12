@@ -91,28 +91,37 @@ namespace graphics {
     //
     void remove_overlap_vertex(std::vector<size_t>& triangles, size_t overlap_vertex)
     {
-        std::vector<size_t> output;
+        // Find first and second occurrence of overlap vertex to remove.
+        size_t i_first = 0;
+        size_t i_second = 0;
 
         for (size_t i = 0; i < triangles.size(); ++i)
-        { 
-            if (triangles[i] != overlap_vertex)
+        {
+            if (triangles[i] == overlap_vertex)
             {
-                output.push_back(triangles[i]);
-            }
-            else
-            {
-                for (size_t j = i + 1; j < i + 4; ++j)
+                i_first = i;
+
+                for (size_t j = i + 1; j < triangles.size(); ++j)
                 {
-                    const size_t k = j%triangles.size();
-                    if (triangles[k] != overlap_vertex)
+                    if (triangles[j] == overlap_vertex)
                     {
-                        output.push_back(triangles[k]);
-                        i = k;
+                        i_second = j;
                         break;
                     }
                 }
+
+                break;
             }
         }
+
+        const size_t triangle_a = i_first/3;
+        const size_t vertex_a = ((i_first%3) + 1)%3;
+
+        const size_t triangle_b = i_second/3;
+        const size_t vertex_b = ((i_second%3) + 1)%3;
+
+        triangles[i_first] = triangles[triangle_b*3 + vertex_b];
+        triangles[i_second] = triangles[triangle_a*3 + vertex_a];
     }
 
     // 
@@ -126,8 +135,6 @@ namespace graphics {
         {
             ++overlaps[i];
         }
-
-        std::vector<size_t> output;
 
         for (size_t i = 0; i < 12; ++i)
         {
