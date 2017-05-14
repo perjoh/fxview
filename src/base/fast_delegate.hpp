@@ -21,6 +21,13 @@ namespace base
             return Fast_delegate(reinterpret_cast<void*>(that), &stub_func<Obj, method>);
         }
 
+		// Optimization for plain c functions.
+        template <Return_type (*method)(Args...)>
+        static Fast_delegate construct()
+        {
+            return Fast_delegate(nullptr, &stub_func_null<method>);
+        }
+
     public :
         Return_type operator()(Args... a)
         {
@@ -36,6 +43,12 @@ namespace base
             Obj* this_ = reinterpret_cast<Obj*>(that);
             return (this_->*method)(a...); 
         }
+
+		template <Return_type (*method)(Args...)>
+		static Return_type stub_func_null(void*, Args... a)
+		{ 
+			return (*method)(a...);
+		}
 
     private : 
 		using Stub_type = Return_type (*)(void*, Args...);
@@ -64,6 +77,13 @@ namespace base
             return Fast_delegate(reinterpret_cast<void*>(that), &stub_func<Obj, method>);
         }
 
+		// Optimization for plain c functions.
+        template <Return_type (*method)()>
+        static Fast_delegate construct()
+        {
+            return Fast_delegate(nullptr, &stub_func_null<method>);
+        }
+
     public :
         Return_type operator()()
         {
@@ -79,6 +99,12 @@ namespace base
             Obj* this_ = reinterpret_cast<Obj*>(that);
             return (this_->*method)(); 
         }
+
+		template <Return_type (*method)()>
+		static Return_type stub_func_null(void*)
+		{ 
+			return (*method)();
+		}
 
     private : 
 		using Stub_type = Return_type (*)(void*);
