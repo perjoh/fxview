@@ -14,6 +14,7 @@ namespace base
             , f_(nullptr)
         { }
 
+
     public :
         template <typename Obj, Return_type (Obj::*method)(Args...)>
         static Fast_delegate construct(Obj* that)
@@ -35,6 +36,12 @@ namespace base
             assert(f_);
             return (*f_)(this_, a...);
         }
+
+	public :
+		bool operator==(const Fast_delegate& rhs)
+		{
+			return this_ == rhs.this_ && f_ == rhs.f_; 
+		}
 
     private :
         template <typename Obj, Return_type (Obj::*method)(Args...)>
@@ -91,6 +98,12 @@ namespace base
             assert(f_);
             return (*f_)(this_);
         }
+
+	public :
+		bool operator==(const Fast_delegate& rhs)
+		{
+			return this_ == rhs.this_ && f_ == rhs.f_; 
+		}
 
     private :
         template <typename Obj, Return_type (Obj::*method)()>
