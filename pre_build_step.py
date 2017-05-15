@@ -7,7 +7,8 @@ import sys
 def strip_suffix(filename):
     return filename[:filename.rfind(".")]
 
-if __name__=='__main__':
+def sourcify_shaders():
+	# Include shaders in c++ code.
     filenames = glob.glob('src/graphics/shaders/glsl/*.glsl')
     for source_filename in filenames:
         directory = os.path.dirname(source_filename)
@@ -20,3 +21,5 @@ if __name__=='__main__':
             bin2cpp.process(source_filename, "graphics::shader::{0}".format(filename_stripped)) 
             sys.stdout = stdout_prev
 
+if __name__=='__main__':
+	sourcify_shaders() 
