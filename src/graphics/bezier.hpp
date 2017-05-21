@@ -3,8 +3,8 @@
 #include <initializer_list>
 #include <vector>
 
+namespace kvant {
 namespace graphics {
-namespace bezier {
 
     namespace details {
 
@@ -241,9 +241,10 @@ namespace bezier {
 
     //
     template <typename Point, typename T, int degree>
-    class Curve {
+    class Bezier_curve {
     public:
-        Curve(const std::array<Point, degree>& points, const std::array<T, degree>& weights)
+        Bezier_curve(const std::array<Point, degree>& points, 
+					 const std::array<T, degree>& weights)
             : points_(points)
             , weights_(weights)
         {
@@ -267,9 +268,9 @@ namespace bezier {
 
     //
     template <typename Point, typename T>
-    class Patch {
+    class Bezier_patch {
     public:
-        Patch(const std::array<Point, 4 * 4>& points)
+        Bezier_patch(const std::array<Point, 4 * 4>& points)
             : points_(points)
         {
         }
