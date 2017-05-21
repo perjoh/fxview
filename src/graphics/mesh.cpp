@@ -3,8 +3,8 @@
 #include "shader.hpp"
 #include <vector>
 
-namespace graphics {
-	namespace mesh {
+namespace kvant {
+	namespace graphics {
 
 	}
 

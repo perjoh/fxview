@@ -1,9 +1,9 @@
 #pragma once
-#include <glm/glm.hpp>
+#include "my_glm.hpp"
 #include <vector>
 
+namespace kvant {
 namespace graphics {
-namespace mesh {
 
     //
     inline glm::vec3 calculate_normal(const glm::vec3& v0,
@@ -78,7 +78,7 @@ namespace mesh {
     typedef std::vector<Triangle> Triangle_array;
 
     //
-    template <typename Vertex = graphics::mesh::Vertex>
+    template <typename Vertex = kvant::graphics::Vertex>
     struct Triangle_mesh {
 
         Triangle_mesh() = default;
@@ -107,7 +107,7 @@ namespace mesh {
         {
             foreach_vertex([&m](Vertex& v) {
                 glm::vec4 pos(v.position, 1.0f);
-                pos        = m * pos;
+                pos = m * pos;
                 v.position = glm::vec3(pos);
             });
         }
@@ -128,8 +128,8 @@ namespace mesh {
         void calculate_vertex_normals()
         {
             if (!triangles.empty())
-            { 
-				// Initialize
+            {
+                // Initialize
                 for (auto& v : vertices)
                 {
                     v.normal = glm::vec3(0.0f);
@@ -137,7 +137,7 @@ namespace mesh {
 
                 std::vector<float> denom(vertices.size(), 0.0f);
 
-				// Count and sum.
+                // Count and sum.
                 for (const Triangle& t : triangles)
                 {
                     auto p0{vertices[t.v0].position};
@@ -155,7 +155,7 @@ namespace mesh {
                     denom[t.v2] += 1.0f;
                 }
 
-				// Divide
+                // Divide
                 for (unsigned i = 0; i < denom.size(); ++i)
                 {
                     vertices[i].normal /= denom[i];
@@ -191,20 +191,20 @@ namespace mesh {
             }
         }
 
-		//
-		void merge_triangles(const std::vector<glm::vec3>& vertices_src)
-		{
-			assert(vertices_src.size() % 3 == 0);
+        //
+        void merge_triangles(const std::vector<glm::vec3>& vertices_src)
+        {
+            assert(vertices_src.size() % 3 == 0);
 
-			vertices.reserve(vertices.size() + vertices_src.size());
+            vertices.reserve(vertices.size() + vertices_src.size());
 
-			for (const auto& vert_src : vertices_src)
-			{ 
-				Vertex vert_new;
-				vert_new.position = vert_src;
-				vertices.push_back(vert_new);
-			}
-		}
+            for (const auto& vert_src : vertices_src)
+            {
+                Vertex vert_new;
+                vert_new.position = vert_src;
+                vertices.push_back(vert_new);
+            }
+        }
 
         // Removes all "equal" vertices.
         void optimize()
@@ -286,8 +286,9 @@ namespace mesh {
         //
         static bool same_position(const Vertex& a, const Vertex& b)
         {
-            static const decltype(Vertex::position.x) threshold = 1.0 / 10000 * 2;
-            const auto d                                        = b.position - a.position;
+            using Float = decltype(Vertex::position.x);
+            static const Float threshold = Float(1.0 / 10000 * 2);
+            const auto d = b.position - a.position;
             return (d.x * d.x + d.y * d.y + d.z * d.z) < threshold;
         }
 
@@ -307,5 +308,5 @@ namespace mesh {
         }
     };
 
-} // namespace mesh
 } // namespace graphics
+} // namespace kvant
