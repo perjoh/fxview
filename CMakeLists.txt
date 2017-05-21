@@ -47,13 +47,14 @@ include_directories(	${SDL2_INCLUDE_DIR}
 						)
 
 set(SOURCE_FILES	src/main.cpp
-					src/base/task_runner.cpp
+					src/base/file_io.cpp
 					src/base/frame_time.cpp
-					src/graphics/window.cpp
-					src/graphics/shader.cpp
+					src/base/task_runner.cpp
 					src/graphics/mesh.cpp
 					src/graphics/mesh_gen.cpp
 					src/graphics/render.cpp
+					src/graphics/shader.cpp
+					src/input/event_handler.cpp
 					)
 
 add_custom_target(pre_build_step 
