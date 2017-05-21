@@ -1,12 +1,11 @@
-#include "graphics/window.hpp"
 #include "graphics/mesh.hpp"
-//#include "graphics/mesh_gen.hpp"
-#include "graphics/shape_gen.hpp"
+#include "graphics/mesh_gen.hpp"
 #include "graphics/render.hpp"
 #include "graphics/bezier.hpp"
 #include "graphics/bezier_render.hpp"
 #include "base/task_runner.hpp"
 #include "base/frame_time.hpp"
+#include "input/event_handler.hpp"
 #include <iostream>
 #include <array>
 #include <glm/gtc/matrix_transform.hpp>
@@ -15,155 +14,157 @@
 #include <vector>
 #include <glm/gtx/transform.hpp>
 
-// Purpose: Generate a triangle mesh from a set of curves.
-//	Path curve - path along which to place the radius curve.
-//	Radius curve - the core shape of the mesh.
-//	Scale curve - determines the size of radius along path.
-// Rotation curve - determines rotation of radius along path.
+using namespace kvant;
 
-/*using graphics::mesh::point;
- 
-	graphics::curve::bezier_n<point> radius_curve{
-		point(0.0f, 0.0f, 1.0f),
-		point(1.0f, 0.0f, 1.0f),
-		point(1.0f, 0.0f, 0.0f),
-		point(1.0f, 0.0f, -1.0f),
-		point(0.0f, 0.0f, -1.0f),
-		point(-1.0f, 0.0f, -1.0f),
-		point(-1.0f, 0.0f, 0.0f),
-		point(-1.0f, 0.0f, 1.0f),
-		point(0.0f, 0.0f, 1.0f)
-	}; 
-
-	graphics::curve::bezier_quadratic<point> test_curve{
-		point(0.0f, 0.0f, 1.0f),
-		point(1.0f, 0.0f, 1.0f),
-		point(1.0f, 0.0f, 0.0f),
-		1.0f, 2.0f, 1.0f };
-
-	std::vector<graphics::curve::bezier_quadratic<point>> curve_sequence{
-		graphics::curve::generate_circular_sequence({	point(-1.0f, 0.0f, -1.0f), 
-														point(1.0f, 0.0f, -1.0f), 
-														//point(1.0f, 0.0f, 1.0f), 
-														point(-1.0f, 0.0f, 1.0f)}, 2.5f) 
-	};*/
-
-	/*unsigned allocate_generated_mesh()
-	{
-		const graphics::curve::quadratic_sequence<point> radius_curve(
-			graphics::curve::generate_circular_sequence({
-				point(-1.0f, 0.0f, -1.0f),
-				point(1.0f, 0.0f, -1.0f),
-				point(1.0f, 0.0f, 1.0f),
-				point(-1.0f, 0.0f, 1.0f)
-			}, 2.5f));
-
-		const graphics::curve::linear_curve<point> path_curve(point(0.0f, 0.0f, 0.0f),
-			point(0.0f, 7.5f, 0.0f));
-
-		const point p0{0.0f, 0.0f, 0.0f};
-		const point p1{3.0f, 0.0f, 0.0f};
-		const point p2{3.0f, 1.0f, 0.0f};
-		const point p3{0.0f, 1.0f, 0.0f};
-
-		//graphics::curve::bezier_quadratic<point> c0{p0, p1, p2};
-		//graphics::curve::bezier_quadratic<point> c1{p2, p3, p4};
-		//graphics::curve::bezier_quadratic<point> c2{p4, p5, p6};
-
-		graphics::curve::bezier_weighted<point> scale_curve{ {p0, p1, p2, p3}, {1.0f, 1.0f, 1.0f, 1.0f} };
-
-		//const graphics::curve::quadratic_sequence<point> scale_curve{ c0, c1, c2 };
-
-		//const graphics::curve::linear_curve<point> scale_curve(point(1.0f), point(1.0f));
-
-
-		const unsigned num_segments = 32;
-		const unsigned segment_size = 16;
-
-		auto shape = graphics::mesh::shaper::generate_shape(radius_curve,
-															path_curve,
-															scale_curve,
-															num_segments,
-															segment_size);
-
-		std::vector<graphics::data::Vertex> vertices(shape.size());
-		for (unsigned i = 0; i < shape.size(); ++i)
-		{
-			vertices[i].position = shape[i];
-			vertices[i].color = glm::vec3(1.0f);
-			vertices[i].normal = glm::vec3(0.0f, 1.0f, 0.0f);
-		}
-
-		auto triangles = graphics::mesh::shaper::triangulate_shape(	num_segments, 
-																	segment_size);
-
-		graphics::data::calc_vertex_normals(&vertices[0], 
-											vertices.size(), 
-											triangles);
-
-		return graphics::render::alloc_indexed_triangles(	&vertices[0], 
-														vertices.size(), 
-														&triangles[0].v0, 
-														triangles.size()*3);
-	}*/
-
-
-	unsigned mesh_id = graphics::render::Mesh_renderer::invalid_mesh_id;
+	unsigned mesh_id = graphics::Renderer::invalid_mesh_id;
 
 	void setup_my_render()
 	{
-		//mesh_id = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		//auto cube = graphics::mesh::generate_cube(glm::vec3(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		//mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube); 
-
-		/*const float cube_size = 0.8f;
-		const float fluff = 0.2f;
-		const float corner_scale = 0.9;
-		const float inner_scale = 0.8f;
-
-		graphics::bezier::Patch<glm::vec3, float> p0({
-			glm::vec3(-cube_size, cube_size, cube_size)*corner_scale,		glm::vec3(-(cube_size - fluff), cube_size, cube_size),									glm::vec3((cube_size - fluff), cube_size, cube_size),									glm::vec3(cube_size, cube_size, cube_size)*corner_scale, 
-			glm::vec3(-cube_size, (cube_size - fluff), cube_size),			glm::vec3(-(cube_size - fluff), (cube_size - fluff), cube_size + fluff)*inner_scale,	glm::vec3((cube_size - fluff), (cube_size - fluff), cube_size + fluff)*inner_scale,		glm::vec3(cube_size, (cube_size - fluff), cube_size), 
-			glm::vec3(-cube_size, -(cube_size - fluff), cube_size),			glm::vec3(-(cube_size - fluff), -(cube_size - fluff), cube_size + fluff)*inner_scale,	glm::vec3((cube_size - fluff), -(cube_size - fluff), cube_size + fluff)*inner_scale,	glm::vec3(cube_size, -(cube_size - fluff), cube_size), 
-			glm::vec3(-cube_size, -cube_size, cube_size)*corner_scale,		glm::vec3(-(cube_size - fluff), -cube_size, cube_size),									glm::vec3((cube_size - fluff), -cube_size, cube_size),									glm::vec3(cube_size, -cube_size, cube_size)*corner_scale
-		});
-
-		graphics::mesh::Triangle_mesh<> patch;
-		patch.make_patch(p0, 4, 4);
-		//patch.translate({0.0f, 0.0f, cube_size}); 
-		graphics::mesh::Triangle_mesh<> cube;
-		cube.merge(patch);
-		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
-		cube.merge(patch);
-		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
-		cube.merge(patch);
-		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
-		cube.merge(patch);
-		patch.transform(glm::rotate(glm::pi<float>()*0.5f, glm::vec3(0.0f, 0.0f, 1.0f)));
-		cube.merge(patch);
-		patch.transform(glm::rotate(glm::pi<float>(), glm::vec3(0.0f, 0.0f, 1.0f)));
-		cube.merge(patch);
-
-		cube.optimize();
-		cube.make_non_indexed();
-		cube.calculate_vertex_normals();
-		cube.foreach_vertex([](graphics::mesh::Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
-		cube.scale(glm::vec3(5.0f));
-		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(cube);*/
-		//mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(graphics::shape_gen::generate_cube(glm::vec3(3.0f)));
-		mesh_id = graphics::render::Renderer::instance().mesh_renderer().allocate_mesh(graphics::shape_gen::generate_grid(64, 64, 0.5f));
+		mesh_id = graphics::Renderer::instance().allocate_mesh(graphics::generate_grid(64, 64, 1.0f)); 
 	}
+
+	struct Entity
+	{ 
+		glm::vec3 position;
+		float rotation;
+		float radius;
+	};
+
+	class Entity_container
+	{
+	public :
+		void add();
+		void remove();
+
+	public :
+		template <typename Fun>
+		void for_each(Fun& f)
+		{
+			for (e : entities_)
+			{
+				f(e);
+			} 
+		}
+
+		template <typename Fun>
+		void for_each(Fun& f) const
+		{
+			for (e : entities_)
+			{
+				f(e);
+			} 
+		}
+
+	private : 
+	};
+
+	class Entity_renderer
+	{
+	public :
+		Entity_renderer()
+			: render_mesh_id_(alloc_mesh())
+			, shader_(graphics::Renderer::instance().allocate_shader_program("basic"))
+		{ 
+			auto shader(shader_.lock());
+			if (shader)
+			{
+				model_view_projection_ = shader->get_uniform<glm::mat4>("model_view_projection");
+				model_transform_ = shader->get_uniform<glm::mat3>("mode_transform");
+			}
+
+			graphics::register_render_callback<Entity_renderer, &Entity_renderer::render>(this);
+		}
+
+		void render()
+		{ 
+			graphics::Shader_scope shader_scope(shader_);
+			if (shader_scope)
+			{ 
+				const glm::mat4 projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+
+				const glm::mat4 view = glm::lookAt(glm::vec3(5, 50, 10),
+												   glm::vec3(0, 0, 0),
+												   glm::vec3(0, 1, 0));
+
+				const glm::mat4 model(1.0f);
+
+				model_view_projection_.set(model*view*projection);
+				model_transform_.set(model);
+
+				graphics::Renderer::instance().render_mesh(render_mesh_id_);
+			}
+		}
+
+	private :
+		unsigned alloc_mesh()
+		{
+			return graphics::Renderer::instance().allocate_mesh(graphics::generate_smooth_cube(glm::vec3(1.0f)));
+		}
+
+	private :
+		unsigned render_mesh_id_;
+		std::weak_ptr<graphics::Shader_program> shader_;
+		graphics::Shader_uniform<glm::mat4> model_view_projection_;
+		graphics::Shader_uniform<glm::mat3> model_transform_;
+	};
+
+	class Player_entity
+	{
+	public :
+		void set_target(Entity* e)
+		{
+			entity_ = e;
+		}
+
+	private : 
+		void update()
+		{ 
+			// Read controller input.
+			// Apply movement.
+
+			if (entity_)
+			{
+
+			}
+		}
+
+	private :
+		Entity* entity_{ nullptr };
+	};
+
+	class Camera_entity
+	{
+	public :
+		void set_target(const Entity* e)
+		{
+			target_ = e;
+		}
+
+	private : 
+		void update()
+		{ 
+			if (target_)
+			{ 
+				// Perform movement based on target.
+
+				//Renderer::instance().set_camera();
+			} 
+		} 
+
+	private :
+		const Entity* target_{ nullptr };
+	};
 
 	void my_render()
 	{
-		assert(mesh_id != graphics::render::Mesh_renderer::invalid_mesh_id);
+		/*assert(mesh_id != graphics::Renderer::invalid_mesh_id);
 
-		using namespace graphics::render;
+		using namespace graphics;
 
-		Mesh_renderer& mesh_renderer = Renderer::instance().mesh_renderer();
+		//Mesh_renderer& mesh_renderer = Renderer::instance().mesh_renderer();
 
 		const glm::mat4 persp{ glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f) };
-		mesh_renderer.set_projection_transform(persp);
+		//Renderer::instance().set_projection_transform(persp);
 
 		const glm::mat4 view = glm::lookAt(glm::vec3(5, 50, 10),
 										   glm::vec3(0, 0, 0),
@@ -174,38 +175,7 @@
 		static float ang = 0.0f;
 		auto transform = glm::rotate(ang, glm::vec3(0.0f, 1.0f, 0.0f));
 		ang += base::Frame_time::const_instance().delta_time_sec()*glm::pi<double>()*0.5;
-		mesh_renderer.render(mesh_id, transform, glm::vec3(1.0f, 0.0f, 0.0f));
-
-		/*graphics::bezier::Curve<glm::vec3, float, 4> c0({	glm::vec3(0.2f, 0.8f, 0.0f), 
-															glm::vec3(0.8f, 0.8f, 0.0f), 
-															glm::vec3(0.8f, 0.2f, 0.0f), 
-															glm::vec3(0.2f, 0.2f, 0.0f) }, 
-															{1.0f, 1.0f, 1.0f, 1.0f});
-		graphics::curve::render_curve(c0, 16, glm::mat4(1.0f));
-
-		graphics::bezier::Curve<glm::vec3, float, 3> c1({	glm::vec3(-0.2f, 0.8f, 0.0f), 
-															glm::vec3(-0.8f, 0.8f, 0.0f), 
-															glm::vec3(-0.8f, 0.2f, 0.0f) }, 
-															{1.0f, 1.0f, 1.0f});
-		graphics::curve::render_curve(c1, 16, glm::mat4(1.0f));
-
-		graphics::bezier::Curve<glm::vec3, float, 5> c2({	glm::vec3(-0.2f, -0.8f, 0.0f), 
-															glm::vec3(-0.8f, -0.8f, 0.0f), 
-															glm::vec3(-0.8f, -0.2f, 0.0f),
-															glm::vec3(-0.2f, -0.2f, 0.0f), 
-															glm::vec3(-0.5f, -0.5f, 0.0f) }, 
-															{1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
-		graphics::curve::render_curve(c2, 16, glm::mat4(1.0f));*/
-
-
-		/*graphics::bezier::Patch<glm::vec3, float> p0({
-			glm::vec3(-0.8, 0.8, 0.0f), glm::vec3(-0.6, 0.8, 0.0), glm::vec3(0.6, 0.8, 0.0), glm::vec3(0.8, 0.8, 0.0), 
-			glm::vec3(-0.8, 0.6, 0.0f), glm::vec3(-0.6, 0.6, 0.0), glm::vec3(0.6, 0.6, 0.0), glm::vec3(0.8, 0.6, 0.0), 
-			glm::vec3(-0.8, -0.6, 0.0f), glm::vec3(-0.6, -0.6, 0.0), glm::vec3(0.6, -0.6, 0.0), glm::vec3(0.8, -0.6, 0.0), 
-			glm::vec3(-0.8, -0.8, 0.0f), glm::vec3(-0.6, -0.8, 0.0), glm::vec3(0.6, -0.8, 0.0), glm::vec3(0.8, -0.8, 0.0)
-		});
-
-		graphics::curve::render_patch(p0, 16, glm::mat4(1.0f));*/
+		mesh_renderer.render(mesh_id, transform, glm::vec3(1.0f, 0.0f, 0.0f)); */
 	}
 
 	class Anim_task
@@ -213,7 +183,7 @@
 	public:
 		Anim_task()
 		{
-			using namespace base;
+			using namespace kvant::base; 
 			Task_runner::instance().add_task(Task_runner::Task_delegate::construct<Anim_task, &Anim_task::Update>(this));
 		}
 
@@ -225,40 +195,34 @@
 	private :
 	};
 
-	class Player_anim
-	{
-	public :
-	private : 
-	};
-
 
 int main()
 {
 	try
 	{
-		graphics::create_graphics(800, 600, "Hello world");
+		graphics::Renderer::instance().create_windowed(800, 600, "Hello world");
 
 		setup_my_render();
 
 		for (;;)
 		{
-			graphics::begin_render(); 
+			graphics::Renderer::instance().begin_render(); 
 
 			my_render(); 
 
-			const bool keep_going = graphics::handle_events();
+			const bool keep_going = input::Event_handler::process();
 
-			base::Task_runner::instance().run();
+			kvant::base::Task_runner::instance().run();
 
-			graphics::end_render();
+			graphics::Renderer::instance().present();
 
-			base::Frame_time::instance().next_frame();
+			kvant::base::Frame_time::instance().next_frame();
 
 			if (!keep_going)
 				break;
 		}
 
-		graphics::cleanup_graphics();
+		graphics::Renderer::instance().destroy();
 	}
 	catch (const std::exception& e)
 	{
