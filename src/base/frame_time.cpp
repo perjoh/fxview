@@ -1,6 +1,7 @@
 #include "frame_time.hpp"
 #include <SDL.h>
 
+namespace kvant {
 namespace base {
 
     Frame_time& Frame_time::instance()
@@ -56,8 +57,8 @@ namespace base {
             last_fps_sample_ = current_time_;
 
             fps_ = static_cast<double>(fps_sample_rate)
-                / static_cast<double>(time_diff(prev_sample, last_fps_sample_))
-                * 1000.0;
+                   / static_cast<double>(time_diff(prev_sample, last_fps_sample_))
+                   * 1000.0;
 
             frame_count_ = 0;
         }
@@ -83,3 +84,4 @@ namespace base {
     }
 
 } // namespace base
+} // namespace kvant

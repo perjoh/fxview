@@ -1,112 +1,117 @@
 #pragma once
-#include <GL/glew.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "my_glm.hpp"
+#include <memory>
 
+namespace kvant {
 namespace graphics {
-namespace render {
 
-	class Shader {
-	public:
-		Shader(GLenum shader_type, const char* shader_source);
-		Shader(const Shader&) = delete;
-		~Shader();
+    class Shader {
+        friend class Shader_program;
 
-		Shader& operator=(const Shader&) = delete;
+    public:
+        enum Shader_type { vertex_shader,
+                           fragment_shader };
 
-	public:
-		void attach(GLuint program_handle) const;
-		void detach(GLuint program_handle) const;
+        Shader(Shader_type shader_type,
+               const char* shader_source,
+               int shader_source_len = 0);
 
-		void destroy();
+        Shader(Shader&&) noexcept;
+        Shader(const Shader&) = delete;
+        ~Shader();
 
-	private:
-		GLuint handle_{ 0 };
-	};
+        Shader& operator=(const Shader&) = delete;
 
-	template <typename T> class Uniform;
+    public:
+        void attach(unsigned int program_handle) const;
+        void detach(unsigned int program_handle) const;
 
-	class Shader_program {
-	public:
-		Shader_program(const Shader_program&) = delete;
+        void destroy();
 
-		Shader_program(const Shader& vertex_shader,
-					   const Shader& fragment_shader);
+    private:
+        unsigned int handle_{0};
+    };
 
-		~Shader_program();
+    template <typename T>
+    class Shader_uniform;
 
-		Shader_program& operator=(const Shader_program&) = delete;
+    class Shader_program {
+		friend class Shader_scope;
 
-	public:
-		void bind();
-		void unbind();
+    public:
+        Shader_program() = default;
+        Shader_program(const Shader_program&) = delete;
 
-	public:
-		template <typename T>
-		Uniform<T> get_uniform(const char* uniform_name) const
-		{
-			const GLint location = ::glGetUniformLocation(handle_, uniform_name);
-			assert(location != -1 && "Uniform not found.");
-			return Uniform<T>(location);
+        Shader_program(const Shader& vertex_shader,
+                       const Shader& fragment_shader);
+
+        ~Shader_program();
+
+    public:
+        Shader_program& operator=(const Shader_program&) = delete;
+        void swap(Shader_program&);
+
+		explicit operator bool() const;
+
+    public:
+        template <typename T>
+        Shader_uniform<T> get_uniform(const char* uniform_name) const
+        {
+            return Shader_uniform<T>(get_uniform_location(uniform_name));
+        } 
+
+    private:
+        void bind();
+        void unbind();
+
+    private:
+		int get_uniform_location(const char* name) const;	
+
+        unsigned int handle_{0};
+    };
+
+	class Shader_scope {
+	public :
+		Shader_scope() = delete;
+		Shader_scope(const Shader_scope&) = delete;
+		Shader_scope(const std::weak_ptr<Shader_program>& ptr)
+			: program_(ptr.lock())
+		{ 
+			program_->bind();
 		}
 
-	private:
-		static GLuint link(const Shader& vertex_shader,
-						   const Shader& fragment_shader);
+		~Shader_scope()
+		{ 
+			program_->unbind();
+		}
 
-		GLuint handle_{ 0 };
+		explicit operator bool() const
+		{
+			return !!program_; 
+		}
+
+	private :
+		std::shared_ptr<Shader_program> program_;
+
 	};
 
-	template <typename T>
-	class Uniform
-	{
-	private:
-		friend class Shader_program;
+    template <typename T>
+    class Shader_uniform {
+    private:
+        friend class Shader_program;
 
-		Uniform(GLuint location)
-			: location_(location)
-		{ }
+        Shader_uniform(int location);
 
-	public:
-		void set(const T&) { assert(false); }
+    public:
+		Shader_uniform() = default;
 
-	private:
-		GLuint location_;
-	};
+        void set(const T&);
 
+		bool is_valid() const;
 
-	template <>
-	inline void Uniform<float>::set(const float& value)
-	{
-		::glUniform1f(location_, value);
-	}
+    private:
+		int location_{ -1 };
+    };
 
-	template <>
-	inline void Uniform<glm::vec3>::set(const glm::vec3& value)
-	{
-		::glUniform3f(location_, value[0], value[1], value[2]);
-	}
-
-	template <>
-	inline void Uniform<glm::vec4>::set(const glm::vec4& value)
-	{
-		// glUniform4fv better?
-		::glUniform4f(location_, value[0], value[1], value[2], value[3]);
-	}
-
-	void set_uniform(GLuint location, const glm::mat3& value);
-	void set_uniform(GLuint location, const glm::mat4& value);
-
-	template <>
-	inline void Uniform<glm::mat3>::set(const glm::mat3& value)
-	{
-		set_uniform(location_, value);
-	}
-
-	template <>
-	inline void Uniform<glm::mat4>::set(const glm::mat4& value)
-	{
-		set_uniform(location_, value);
-	}
-
-} }
+} // namespace graphics
+} // namespace kvant
