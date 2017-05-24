@@ -3,18 +3,18 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+namespace kvant {
 namespace graphics {
-namespace mesh {
 
-    mesh::Triangle_mesh<> generate_smooth_cube(const glm::vec3& size,
+    Triangle_mesh<> generate_smooth_cube(const glm::vec3& size,
                                                unsigned level_of_detail)
     {
         const float cube_size = 1.0f;
-        const float fluff = 0.05;
-        const float corner_scale = 0.92;
+        const float fluff = 0.05f;
+        const float corner_scale = 0.92f;
         const float inner_scale = 1.0f;
 
-        graphics::bezier::Patch<glm::vec3, float> p0({glm::vec3(-cube_size, cube_size, cube_size) * corner_scale,
+        Bezier_patch<glm::vec3, float> p0({glm::vec3(-cube_size, cube_size, cube_size) * corner_scale,
                                                       glm::vec3(-(cube_size - fluff), cube_size, cube_size),
                                                       glm::vec3((cube_size - fluff), cube_size, cube_size),
                                                       glm::vec3(cube_size, cube_size, cube_size) * corner_scale,
@@ -31,10 +31,10 @@ namespace mesh {
                                                       glm::vec3((cube_size - fluff), -cube_size, cube_size),
                                                       glm::vec3(cube_size, -cube_size, cube_size) * corner_scale});
 
-        mesh::Triangle_mesh<> patch;
+        Triangle_mesh<> patch;
         patch.make_patch(p0, level_of_detail, level_of_detail);
 
-        mesh::Triangle_mesh<> cube;
+        Triangle_mesh<> cube;
         cube.merge(patch);
         patch.transform(glm::rotate(glm::mat4(1.0f), glm::pi<float>() * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f)));
         cube.merge(patch);
@@ -50,13 +50,13 @@ namespace mesh {
         cube.optimize();
         //cube.make_non_indexed();
         cube.calculate_vertex_normals();
-        cube.foreach_vertex([](graphics::mesh::Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
+        cube.foreach_vertex([](Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
         cube.scale(size);
 
         return cube;
     }
 
-    mesh::Triangle_mesh<> generate_cube(const glm::vec3& size)
+    Triangle_mesh<> generate_cube(const glm::vec3& size)
     {
         const float top = size.y;
         const float bottom = -top;
@@ -65,7 +65,7 @@ namespace mesh {
         const float far = -size.z;
         const float near = -far;
 
-        mesh::Triangle_mesh<> cube;
+        Triangle_mesh<> cube;
         { // top
             std::vector<glm::vec3> quad{{left, top, far},
                                         {right, top, far},
@@ -128,12 +128,12 @@ namespace mesh {
         }
 
         cube.calculate_vertex_normals();
-        cube.foreach_vertex([](graphics::mesh::Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
+        cube.foreach_vertex([](Vertex& v) { v.color = glm::vec3(1.0f, 0.0f, 0.0f); });
 
         return cube;
     }
 
-    mesh::Triangle_mesh<> generate_checkerboard(unsigned int width,
+    Triangle_mesh<> generate_checkerboard(unsigned int width,
                                         unsigned int height,
                                         float unit_size)
     {
@@ -166,7 +166,7 @@ namespace mesh {
 			z += step_z;
 		}
 
-        mesh::Triangle_mesh<> grid;
+        Triangle_mesh<> grid;
 		grid.merge_triangles(vertices);
 		grid.calculate_vertex_normals();
 		//grid.foreach_vertex([](graphics::mesh::Vertex& v) { v.normal = glm::vec3(0.0f, 1.0f, 0.0f); });

@@ -235,13 +235,13 @@ namespace graphics {
                 throw std::runtime_error("glewInit failed.");
             }
 
-            ::glEnable(GL_DEPTH_TEST); 
-			::glEnable(GL_CULL_FACE);
-			::glFrontFace(GL_CW);
-			::glCullFace(GL_BACK);
+            ::glEnable(GL_DEPTH_TEST);
+            ::glEnable(GL_CULL_FACE);
+            ::glFrontFace(GL_CW);
+            ::glCullFace(GL_BACK);
 
-			// Enable v-sync.
-			::SDL_GL_SetSwapInterval(1);
+            // Enable v-sync.
+            ::SDL_GL_SetSwapInterval(1);
         }
 
         void destroy() override
@@ -265,18 +265,18 @@ namespace graphics {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         }
 
-	private :
-		base::Delegate_list<Render_callback> render_callbacks_;
+    private:
+        base::Delegate_list<Render_callback> render_callbacks_;
 
         void register_render_callback(Render_callback callback) override
         {
-			render_callbacks_.push_back(callback);
+            render_callbacks_.push_back(callback);
         }
 
         void begin_render() override
         {
             clear_buffers();
-			render_callbacks_();
+            render_callbacks_();
         }
 
         void present() override
@@ -344,21 +344,21 @@ namespace graphics {
         {
             const std::string resource_path("resources/shaders/");
 
-            std::string shader_source = base::read_file((resource_path + vs_name + "_vs.glsl").c_str());
-            if (shader_source.length() > 0)
+            const std::string shader_source_vs = base::read_file((resource_path + vs_name + "_vs.glsl").c_str());
+            if (shader_source_vs.length() > 0)
             {
-                Shader vertex_shader(Shader::vertex_shader, shader_source.c_str());
+                Shader vertex_shader(Shader::vertex_shader, shader_source_vs.c_str());
 
                 if (nullptr == fs_name)
                 {
                     fs_name = vs_name;
                 }
 
-                shader_source = base::read_file((resource_path + fs_name + "_fs.glsl").c_str());
+                const std::string shader_source_fs = base::read_file((resource_path + fs_name + "_fs.glsl").c_str());
 
-                if (shader_source.length())
+                if (shader_source_fs.length())
                 {
-                    Shader fragment_shader(Shader::fragment_shader, shader_source.c_str());
+					Shader fragment_shader(Shader::fragment_shader, shader_source_fs.c_str());
 
                     Shader_program program(vertex_shader, fragment_shader);
                     if (program)

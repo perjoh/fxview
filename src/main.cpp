@@ -16,54 +16,46 @@
 
 using namespace kvant;
 
-	unsigned mesh_id = graphics::Renderer::invalid_mesh_id;
-
-	void setup_my_render()
-	{
-		mesh_id = graphics::Renderer::instance().allocate_mesh(graphics::generate_grid(64, 64, 1.0f)); 
-	}
-
 	struct Entity
 	{ 
-		glm::vec3 position;
-		float rotation;
-		float radius;
+		glm::vec3 position{0.0f};
+		float rotation{ 0.0f };
+		float radius{ 1.0f };
 	};
 
 	class Entity_container
 	{
 	public :
-		void add();
-		void remove();
+		void add(const Entity& e)
+		{
+			entities_.push_back(e); 
+		}
 
 	public :
 		template <typename Fun>
-		void for_each(Fun& f)
+		void for_each(Fun&& f)
 		{
-			for (e : entities_)
-			{
-				f(e);
-			} 
+			std::for_each(begin(entities_), end(entities_), f);
 		}
 
 		template <typename Fun>
-		void for_each(Fun& f) const
+		void for_each(Fun&& f) const
 		{
-			for (e : entities_)
-			{
-				f(e);
-			} 
+			using namespace std;
+			std::for_each(cbegin(entities_), cend(entities_), f);
 		}
 
 	private : 
+		std::vector<Entity> entities_;
 	};
 
 	class Entity_renderer
 	{
 	public :
-		Entity_renderer()
+		Entity_renderer(const Entity_container& entity_container)
 			: render_mesh_id_(alloc_mesh())
 			, shader_(graphics::Renderer::instance().allocate_shader_program("basic"))
+			, entity_container_(entity_container)
 		{ 
 			auto shader(shader_.lock());
 			if (shader)
@@ -86,12 +78,15 @@ using namespace kvant;
 												   glm::vec3(0, 0, 0),
 												   glm::vec3(0, 1, 0));
 
-				const glm::mat4 model(1.0f);
+				entity_container_.for_each([&projection, &view, this](const Entity&) 
+				{
+					const glm::mat4 model(1.0f);
 
-				model_view_projection_.set(model*view*projection);
-				model_transform_.set(model);
+					model_view_projection_.set(model*view*projection);
+					model_transform_.set(model);
 
-				graphics::Renderer::instance().render_mesh(render_mesh_id_);
+					graphics::Renderer::instance().render_mesh(render_mesh_id_);
+				});
 			}
 		}
 
@@ -106,7 +101,16 @@ using namespace kvant;
 		std::weak_ptr<graphics::Shader_program> shader_;
 		graphics::Shader_uniform<glm::mat4> model_view_projection_;
 		graphics::Shader_uniform<glm::mat3> model_transform_;
+
+		const Entity_container& entity_container_;
+
+		Entity_renderer(const Entity_renderer&) = delete;
+		Entity_renderer& operator=(const Entity_renderer&) = delete;
 	};
+
+	class World_renderer; 
+	class Particle_renderer;
+	class Gui_renderer;
 
 	class Player_entity
 	{
@@ -155,29 +159,6 @@ using namespace kvant;
 		const Entity* target_{ nullptr };
 	};
 
-	void my_render()
-	{
-		/*assert(mesh_id != graphics::Renderer::invalid_mesh_id);
-
-		using namespace graphics;
-
-		//Mesh_renderer& mesh_renderer = Renderer::instance().mesh_renderer();
-
-		const glm::mat4 persp{ glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f) };
-		//Renderer::instance().set_projection_transform(persp);
-
-		const glm::mat4 view = glm::lookAt(glm::vec3(5, 50, 10),
-										   glm::vec3(0, 0, 0),
-										   glm::vec3(0, 1, 0));
-
-		mesh_renderer.set_view_transform(view);
-
-		static float ang = 0.0f;
-		auto transform = glm::rotate(ang, glm::vec3(0.0f, 1.0f, 0.0f));
-		ang += base::Frame_time::const_instance().delta_time_sec()*glm::pi<double>()*0.5;
-		mesh_renderer.render(mesh_id, transform, glm::vec3(1.0f, 0.0f, 0.0f)); */
-	}
-
 	class Anim_task
 	{
 	public:
@@ -202,13 +183,14 @@ int main()
 	{
 		graphics::Renderer::instance().create_windowed(800, 600, "Hello world");
 
-		setup_my_render();
+		Entity_container entity_container;
+		Entity_renderer entity_renderer(entity_container);
+
+		entity_container.add(Entity());
 
 		for (;;)
 		{
 			graphics::Renderer::instance().begin_render(); 
-
-			my_render(); 
 
 			const bool keep_going = input::Event_handler::process();
 
