@@ -65,16 +65,6 @@ namespace graphics {
         return (points[edge.vertex_a] + points[edge.vertex_b])*0.5f + offset;
     }
 
-    // 
-    void merge_edge_index(std::set<size_t>& indices, size_t vertex_index)
-    {
-        for (size_t edge_index = 0; edge_index < edges.size(); ++edge_index)
-        {
-            if (edges[edge_index].vertex_a == vertex_index || edges[edge_index].vertex_b == vertex_index)
-                indices.insert(vertex_index);
-        }
-    }
-
     static const std::array<glm::vec3, 12> mid_points{  calc_mid_point(edges[0]),
                                                         calc_mid_point(edges[1]),
                                                         calc_mid_point(edges[2]),
@@ -89,66 +79,65 @@ namespace graphics {
                                                         calc_mid_point(edges[11]) };
 
     //
-    void remove_overlap_vertex(std::vector<size_t>& triangles, size_t overlap_vertex)
+    inline size_t next_triangle_vertex(size_t i)
     {
-        // Find first and second occurrence of overlap vertex to remove.
-        size_t i_first = 0;
-        size_t i_second = 0;
-
-        for (size_t i = 0; i < triangles.size(); ++i)
-        {
-            if (triangles[i] == overlap_vertex)
-            {
-                i_first = i;
-
-                for (size_t j = i + 1; j < triangles.size(); ++j)
-                {
-                    if (triangles[j] == overlap_vertex)
-                    {
-                        i_second = j;
-                        break;
-                    }
-                }
-
-                break;
-            }
-        }
-
-        const size_t triangle_a = i_first/3;
-        const size_t vertex_a = ((i_first%3) + 1)%3;
-
-        const size_t triangle_b = i_second/3;
-        const size_t vertex_b = ((i_second%3) + 1)%3;
-
-        triangles[i_first] = triangles[triangle_b*3 + vertex_b];
-        triangles[i_second] = triangles[triangle_a*3 + vertex_a];
+        const size_t triangle = i/3;
+        const size_t i_next = (i + 1)%3;
+        return triangle*3 + i_next;
     }
 
     // 
-    void remove_overlapping_vertices(std::vector<size_t>& triangles)
+    size_t find_next_overlap(const std::vector<size_t>& indices, size_t i)
     {
-        assert(triangles.size()%3 == 0);
-
-        size_t overlaps[12] = {0};
-
-        for (auto& i : triangles)
+        for (size_t j = 1; j < indices.size(); ++j)
         {
-            ++overlaps[i];
-        }
-
-        for (size_t i = 0; i < 12; ++i)
-        {
-            assert(overlaps[i] < 3);
-            if (overlaps[i] == 2)
-            { 
-                remove_overlap_vertex(triangles, i);
+            if (indices[i] == indices[(j + i)%indices.size()])
+            {
+                return j;
             }
         }
+
+        return i;
+    } 
+
+    //
+    bool is_overlap(const std::vector<size_t>& indices, size_t i)
+    {
+        return find_next_overlap(indices, i) != i;
+    }
+
+    //
+    size_t next_vertex(const std::vector<size_t>& indices, size_t i)
+    {
+        size_t j = next_triangle_vertex(indices, i);
+        if (is_overlap(indices, j))
+        {
+            j = next_vertex(indices, find_next_overlap(indices, j));
+        }
+
+        return j;
     }
 
     //
     void generate_geometry(size_t mask)
     {
+        std::vector<size_t> indices;
+        for (size_t bit = 0; bit < 8; ++bit)
+        {
+        }
+
+        std::vector<size_t> output;
+
+        for (size_t i = 0; i < indices.size(); ++i)
+        {
+            size_t j = i;
+            if (is_overlap(indices, j))
+            {
+                j = next_vertex(indices, j);
+            }
+
+            output.push_back(j);
+        }
     }
 
     // In look up table, store indexes to edges that are intersected by the 
