@@ -339,32 +339,43 @@ namespace graphics {
         using Shader_map = std::map<std::string, std::shared_ptr<Shader_program>>;
         Shader_map shader_map_;
 
+        static std::string read_shader_source(const char* pattern,
+                                              Shader::Shader_type shader_type)
+        {
+            const std::string resource_path("resources/shaders/");
+            const char* suffix = (shader_type == Shader::vertex_shader) ? "_vs.glsl"
+                                                                        : "_fs.glsl";
+            return base::read_textfile((resource_path + pattern + suffix).c_str());
+        }
+
         std::weak_ptr<Shader_program> allocate_shader_program(const char* vs_name,
                                                               const char* fs_name) override
         {
-            const std::string resource_path("resources/shaders/");
+            if (nullptr == fs_name)
+            {
+                fs_name = vs_name;
+            }
 
-            const std::string shader_source_vs = base::read_file((resource_path + vs_name + "_vs.glsl").c_str());
+            const std::string shader_source_vs = read_shader_source(vs_name, Shader::vertex_shader);
             if (shader_source_vs.length() > 0)
             {
-                Shader vertex_shader(Shader::vertex_shader, shader_source_vs.c_str());
+                Shader vertex_shader(Shader::vertex_shader,
+                                     shader_source_vs.c_str(),
+                                     shader_source_vs.length());
 
-                if (nullptr == fs_name)
-                {
-                    fs_name = vs_name;
-                }
-
-                const std::string shader_source_fs = base::read_file((resource_path + fs_name + "_fs.glsl").c_str());
-
+                const std::string shader_source_fs = read_shader_source(fs_name, Shader::fragment_shader);
                 if (shader_source_fs.length())
                 {
-					Shader fragment_shader(Shader::fragment_shader, shader_source_fs.c_str());
+                    Shader fragment_shader(Shader::fragment_shader,
+                                           shader_source_fs.c_str(),
+                                           shader_source_fs.length());
 
                     Shader_program program(vertex_shader, fragment_shader);
                     if (program)
                     {
                         const std::string key(std::string(vs_name) + fs_name);
                         std::shared_ptr<Shader_program>& program_ref = shader_map_[key];
+						program_ref = std::make_shared<Shader_program>();
                         program_ref->swap(program);
                         return program_ref;
                     }

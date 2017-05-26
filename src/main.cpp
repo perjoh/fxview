@@ -61,7 +61,7 @@ using namespace kvant;
 			if (shader)
 			{
 				model_view_projection_ = shader->get_uniform<glm::mat4>("model_view_projection");
-				model_transform_ = shader->get_uniform<glm::mat3>("mode_transform");
+				model_transform_ = shader->get_uniform<glm::mat3>("model_transform");
 			}
 
 			graphics::register_render_callback<Entity_renderer, &Entity_renderer::render>(this);
@@ -82,7 +82,7 @@ using namespace kvant;
 				{
 					const glm::mat4 model(1.0f);
 
-					model_view_projection_.set(model*view*projection);
+					model_view_projection_.set(projection*view*model);
 					model_transform_.set(model);
 
 					graphics::Renderer::instance().render_mesh(render_mesh_id_);

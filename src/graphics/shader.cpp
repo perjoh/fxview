@@ -17,6 +17,8 @@ namespace graphics {
         glShaderSource(shader, 1, &source, &shader_source_len);
         glCompileShader(shader);
 
+        check_opengl_error();
+
         // Get status of compilation
         GLint status = GL_FALSE;
         glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
@@ -35,8 +37,8 @@ namespace graphics {
 
     GLenum opengl_shader_type(Shader::Shader_type shader_type)
     {
-        return shader_type == Shader::vertex_shader ? GL_VERTEX_SHADER
-                                                    : GL_FRAGMENT_SHADER;
+        return (shader_type == Shader::vertex_shader) ? GL_VERTEX_SHADER
+                                                      : GL_FRAGMENT_SHADER;
     }
 
     Shader::Shader(Shader_type shader_type,
@@ -89,6 +91,8 @@ namespace graphics {
         ::glAttachShader(program_handle, fragment_shader_handle);
 
         ::glLinkProgram(program_handle);
+
+        check_opengl_error();
 
         // Get linking status
         GLint status = GL_FALSE;
@@ -168,14 +172,14 @@ namespace graphics {
         assert(location != -1 && "Invalid location");
     }
 
-    void set_uniform(GLuint location, 
-					 const float& value)
+    void set_uniform(GLuint location,
+                     const float& value)
     {
         ::glUniform1f(location, value);
     }
 
-    void set_uniform(GLuint location, 
-					 const glm::vec3& value)
+    void set_uniform(GLuint location,
+                     const glm::vec3& value)
     {
         ::glUniform3f(location,
                       value[0],
@@ -183,8 +187,8 @@ namespace graphics {
                       value[2]);
     }
 
-    void set_uniform(GLuint location, 
-					 const glm::vec4& value)
+    void set_uniform(GLuint location,
+                     const glm::vec4& value)
     {
         // glUniform4fv better?
         ::glUniform4f(location,
@@ -218,11 +222,11 @@ namespace graphics {
         set_uniform(location_, value);
     }
 
-	template <typename T>
-	bool Shader_uniform<T>::is_valid() const
-	{
-		return location_ != -1;
-	}
+    template <typename T>
+    bool Shader_uniform<T>::is_valid() const
+    {
+        return location_ != -1;
+    }
 
     template Shader_uniform<float>;
     template Shader_uniform<glm::vec3>;
