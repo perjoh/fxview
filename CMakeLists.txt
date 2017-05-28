@@ -55,6 +55,7 @@ set(SOURCE_FILES	src/main.cpp
 					src/graphics/render.cpp
 					src/graphics/shader.cpp
 					src/input/event_handler.cpp
+					src/input/gamepad_device.cpp
 					)
 
 add_custom_target(pre_build_step 
