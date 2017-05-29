@@ -19,9 +19,6 @@ namespace input {
         float read_button(Analog_button) override;
 
     private:
-        ::SDL_GameController* initialize();
-
-    private:
         class Analog_input {
         public:
             float get_normalized(int value)
@@ -104,9 +101,7 @@ namespace input {
     {
         if (stick == right)
         {
-            return std::make_pair(
-
-                read_normalized_analog(right_stick_[0], SDL_CONTROLLER_AXIS_RIGHTX),
+            return std::make_pair( read_normalized_analog(right_stick_[0], SDL_CONTROLLER_AXIS_RIGHTX),
                 read_normalized_analog(right_stick_[1], SDL_CONTROLLER_AXIS_RIGHTY));
         }
 

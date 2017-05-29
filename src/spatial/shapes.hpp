@@ -5,8 +5,8 @@
 #undef min
 #undef max
 
+namespace kvant {
 namespace spatial {
-namespace shapes {
 
 	using Point = glm::vec2;
 
